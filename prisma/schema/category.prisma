@@ -1,0 +1,8 @@
+model Category {
+  id String @id @default(uuid())
+  CategoryName String
+  products Products[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+   @@map("categories")
+}

@@ -1,0 +1,39 @@
+
+model User {
+  id        String      @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  contactNumber String
+  role      UserRole @default(Buyer)
+  status    UserStatus @default(Active)
+  admin   Admin?
+  seller Seller?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Seller {
+  id String @id @default(uuid())
+  profilePhoto String?
+  isDeleted Boolean @default(false)
+  products Products[]
+  userId String @unique
+  user User @relation(fields: [userId],references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+   @@map("sellers")
+}
+model Admin {
+  id String @id @default(uuid())
+  profilePhoto String?
+  userId String @unique
+  user User @relation(fields: [userId],references: [id])
+  isDeleted Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+   @@map("admins")
+}
+
