@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "sellers" ALTER COLUMN "shopName" DROP NOT NULL,
+ALTER COLUMN "shopSlug" DROP NOT NULL;

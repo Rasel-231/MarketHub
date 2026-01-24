@@ -22,6 +22,9 @@ router.post(
         }
     }
 );
-router.get("/", auth(UserRole.Admin), userController.getAllUsers);
+router.get("/:id", auth(UserRole.ADMIN), userController.getSingleUser);
+router.put("/:id", auth(UserRole.ADMIN, UserRole.SELLER), userController.updateUser);
+router.delete("/:id", auth(UserRole.ADMIN), userController.deleteUser);
+router.get("/", auth(UserRole.ADMIN), userController.getAllUsers);
 
 export const userRoutes = router;

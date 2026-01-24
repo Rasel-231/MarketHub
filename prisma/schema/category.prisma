@@ -1,8 +1,9 @@
 model Category {
-  id String @id @default(uuid())
-  CategoryName String
-  products Products[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-   @@map("categories")
+  id            String     @id @default(uuid())
+  name          String     @unique
+  products      Products[]
+  status       CategoryStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  @@map("categories")
 }

@@ -1,15 +1,21 @@
 model Products {
-  id String @id @default(uuid())
-  ProductsName String
-  profilePhoto String?
+  id          String        @id @default(uuid())
+  title       String
   description String
-  price Float
-  status ProductStatus @default(Available)
-  categoryId String
-  category Category @relation(fields: [categoryId],references: [id])
-  sellerId String
-  seller Seller @relation(fields: [sellerId],references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-   @@map("products")
+  price       Float
+  stock       Int
+  userId     String
+  user       User          @relation(fields: [userId], references: [id])
+  cartItems   CartItem[]
+  brand       String
+  orderItems  OrderItem[]
+  images      String[]      // multiple images
+  status      ProductStatus @default(AVAILABLE)
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+  sellerId    String
+  seller      Seller        @relation(fields: [sellerId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  @@map("products")
 }

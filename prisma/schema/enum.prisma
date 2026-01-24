@@ -1,34 +1,56 @@
+// --------------------
+// ENUMS
+// --------------------
 enum UserRole {
-  Buyer
-  Admin
-  Seller
+  BUYER
+  SELLER
+  ADMIN
 }
 
 enum UserStatus {
-  Active
-  suspended
-  pending
+  ACTIVE
+  INACTIVE
+  SUSPENDED
 }
+
+enum SellerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
 enum ProductStatus {
-  Available
-  StockOut
-  Upcoming
+  AVAILABLE
+  OUT_OF_STOCK
+  DISCONTINUED
 }
+
 enum OrderStatus {
-  Pending
-  Processing
-  Shipped
-  Delivered
-  Cancelled
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
 
 enum PaymentStatus {
-  Paid
-  Unpaid
-  Refunded
+  UNPAID
+  PAID
+  REFUNDED
 }
+
 enum PaymentMethod {
-  CashOnDelivery
-  OnlinePayment
-  PartialPayment
+  CASH_ON_DELIVERY
+  ONLINE
+}
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+  OVERNIGHT
+}
+
+enum CategoryStatus {
+  ACTIVE
+  INACTIVE
 }

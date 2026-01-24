@@ -5,7 +5,6 @@ import sendResponse from "../../shared/sendResponse";
 import httpStatus from "http-status";
 import { userService } from "./user.service";
 import pick from "../../helpers/pick";
-import { fi } from "zod/v4/locales";
 import { userFilterableFields } from "./user.constant";
 
 const createUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
@@ -30,8 +29,44 @@ const getAllUsers = catchAsync(async (req: Request, res: Response): Promise<void
         data: result.data,
     });
 })
+const deleteUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const result = await userService.userDelete(id as string);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User deleted successfully!",
+        data: result,
+    });
+})
+
+const updateUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const payload = req.body;
+    const result = await userService.updateUser(id as string, payload);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User updated successfully!",
+        data: result,
+    });
+})
+const getSingleUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const result = await userService.getSingleUser(id as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User retrieved successfully!",
+        data: result,
+    });
+})
 
 export const userController = {
     createUser,
-    getAllUsers
+    getAllUsers,
+    deleteUser,
+    updateUser,
+    getSingleUser
 }

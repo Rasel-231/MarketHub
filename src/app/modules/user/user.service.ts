@@ -1,4 +1,4 @@
-import { Prisma, User } from "@prisma/client";
+import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "../../shared/prisma";
 import { Request } from "express";
@@ -28,7 +28,7 @@ const createUser = async (req: Request) => {
                 email: req.body.email,
                 password: hashPassword,
                 contactNumber: req.body.contactNumber,
-                role: req.body.role
+                role: req.body.role.toUpperCase() as UserRole
             }
         });
 
@@ -37,7 +37,9 @@ const createUser = async (req: Request) => {
             await tnx.seller.create({
                 data: {
                     userId: newUser.id,
-                    profilePhoto: profilePhoto
+                    profilePhoto: profilePhoto,
+                    shopName: req.body.shopName || null,
+                    shopSlug: req.body.shopSlug || null
                 }
             });
         } else if (req.body.role === 'Admin') {
@@ -68,8 +70,6 @@ const createUser = async (req: Request) => {
 
     return result;
 };
-
-
 
 const getAllUsers = async (
     params: IUserFilters,
@@ -128,9 +128,33 @@ const getAllUsers = async (
         data: users
     };
 };
+const userDelete = async (userId: string) => {
+    const deletedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { status: UserStatus.INACTIVE },
+    });
+    return deletedUser;
+}
 
+const updateUser = async (userId: string, payload: Partial<User>): Promise<User> => {
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: payload,
+    });
+    return updatedUser;
+}
+
+const getSingleUser = async (userId: string): Promise<User | null> => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+    return user;
+};
 
 export const userService = {
     createUser,
-    getAllUsers
+    getAllUsers,
+    userDelete,
+    updateUser,
+    getSingleUser
 };
