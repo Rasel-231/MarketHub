@@ -8,7 +8,7 @@ import pick from "../../helpers/pick";
 import { userFilterableFields } from "./user.constant";
 
 const createUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const result = await userService.createUser(req)
+    const result = await userService.createUser(req);
     console.log("Database Result with Cloudinary URL:", result);
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -29,6 +29,28 @@ const getAllUsers = catchAsync(async (req: Request, res: Response): Promise<void
         data: result.data,
     });
 })
+const getSingleUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const result = await userService.getSingleUser(id as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User retrieved successfully!",
+        data: result,
+    });
+})
+const updateUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const payload = req.body;
+    const file = req.file;
+    const result = await userService.updateUser(id as string, payload, file as unknown as Request);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User updated successfully!",
+        data: result,
+    });
+})
 const deleteUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const result = await userService.userDelete(id as string);
@@ -41,32 +63,13 @@ const deleteUser = catchAsync(async (req: Request, res: Response): Promise<void>
     });
 })
 
-const updateUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
-    const payload = req.body;
-    const result = await userService.updateUser(id as string, payload);
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "User updated successfully!",
-        data: result,
-    });
-})
-const getSingleUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
-    const result = await userService.getSingleUser(id as string);
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "User retrieved successfully!",
-        data: result,
-    });
-})
 
 export const userController = {
     createUser,
     getAllUsers,
-    deleteUser,
+    getSingleUser,
     updateUser,
-    getSingleUser
+    deleteUser,
+
+
 }

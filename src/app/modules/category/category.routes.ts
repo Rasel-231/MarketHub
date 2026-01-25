@@ -1,9 +1,10 @@
 import express from "express";
 import { categoryController } from "./category.controller";
-import { auth } from "../../middlewares/auth";
+
 const router = express.Router();
-router.put("/:id", categoryController.updateCategory);
-router.delete("/:id", categoryController.deletecategory);
-router.get("/", categoryController.getAllcategory);
-router.post("/create", categoryController.createcategory);
+router.get("/", categoryController.getAllCategory);
+router.post("/create", categoryController.createCategory);
+router.get("/:id", categoryController.getSingleCategory);
+router.patch("/:id", categoryController.updateCategory);
+router.delete("/:id", categoryController.deleteCategory);
 export const categoryRoutes = router;

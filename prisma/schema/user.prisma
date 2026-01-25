@@ -24,8 +24,6 @@ model Seller {
   shopName      String?
   shopSlug      String?       @unique
   profilePhoto  String?
-  phone         String?
-  status        SellerStatus @default(PENDING)
   products      Products[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt

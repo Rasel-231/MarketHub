@@ -13,12 +13,6 @@ enum UserStatus {
   SUSPENDED
 }
 
-enum SellerStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  SUSPENDED
-}
 
 enum ProductStatus {
   AVAILABLE

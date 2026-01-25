@@ -4,27 +4,15 @@ import { UserValidation } from "./userValidation";
 import { fileUploader } from "../../helpers/fileUploader";
 import { auth } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
+import { parseData } from "../../middlewares/parseData";
+import validateRequest from "../../middlewares/validateRequest";
 
 const router = express.Router();
-
-router.post(
-    "/create-user",
-    fileUploader.upload.single("file"),
-    (req: Request, res: Response, next: NextFunction) => {
-        try {
-            // "data" কি (key) থেকে আসা JSON স্ট্রিং পার্স এবং Zod ভ্যালিডেশন
-            req.body = UserValidation.createUserValidationSchema.parse(
-                JSON.parse(req.body.data)
-            );
-            userController.createUser(req, res, next);
-        } catch (error) {
-            next(error);
-        }
-    }
-);
-router.get("/:id", auth(UserRole.ADMIN), userController.getSingleUser);
-router.put("/:id", auth(UserRole.ADMIN, UserRole.SELLER), userController.updateUser);
-router.delete("/:id", auth(UserRole.ADMIN), userController.deleteUser);
 router.get("/", auth(UserRole.ADMIN), userController.getAllUsers);
+router.post("/create-user", fileUploader.upload.single("profile_images"), parseData, validateRequest(UserValidation.createUserValidationSchema), userController.createUser);
+router.get("/:id", auth(UserRole.ADMIN), userController.getSingleUser);
+router.patch("/:id", auth(UserRole.ADMIN, UserRole.SELLER), fileUploader.upload.single("profile_images"), parseData, userController.updateUser);
+router.delete("/:id", auth(UserRole.ADMIN), userController.deleteUser);
+
 
 export const userRoutes = router;

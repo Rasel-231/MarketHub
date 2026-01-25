@@ -5,53 +5,49 @@ import { Request } from "express";
 import { fileUploader } from "../../helpers/fileUploader";
 import config from "../../../config";
 import { paginationHelpers } from "../../helpers/paginationHelpers";
-
 import { IPaginationOptions, IUserFilters } from "./user.interface";
 import { searchableFileds } from "./user.constant";
+import { uploadImage } from "../../utils/imageUpload";
 
-const createUser = async (req: Request) => {
+const createUser = async (payload: Request) => {
     let profilePhoto = null;
 
-    // ক্লাউডিনারিতে আপলোড
-    if (req.file) {
-        const uploadedResult = await fileUploader.uploadToCloudinary(req.file);
+    if (payload.file) {
+        const uploadedResult = await fileUploader.uploadToCloudinary(payload.file);
         profilePhoto = uploadedResult?.secure_url;
     }
 
-    const hashPassword = await bcrypt.hash(req.body.password, Number(config.salt_round));
+    const hashPassword = await bcrypt.hash(payload.body.password, Number(config.salt_round));
 
-    const result = await prisma.$transaction(async (tnx: Prisma.TransactionClient) => {
-        // ১. ইউজার তৈরি
+    return await prisma.$transaction(async (tnx: Prisma.TransactionClient) => {
         const newUser = await tnx.user.create({
             data: {
-                name: req.body.name,
-                email: req.body.email,
+                name: payload.body.name,
+                email: payload.body.email,
                 password: hashPassword,
-                contactNumber: req.body.contactNumber,
-                role: req.body.role.toUpperCase() as UserRole
+                contactNumber: payload.body.contactNumber,
+                role: payload.body.role.toUpperCase() as UserRole
             }
         });
 
-        // ২. রোল অনুযায়ী রিলেশনাল ডাটা তৈরি
-        if (req.body.role === 'Seller') {
+        if (payload.body.role === 'Seller') {
             await tnx.seller.create({
                 data: {
                     userId: newUser.id,
-                    profilePhoto: profilePhoto,
-                    shopName: req.body.shopName || null,
-                    shopSlug: req.body.shopSlug || null
+                    profilePhoto,
+                    shopName: payload.body.shopName || null,
+                    shopSlug: payload.body.shopSlug || null
                 }
             });
-        } else if (req.body.role === 'Admin') {
+        } else if (payload.body.role === 'Admin') {
             await tnx.admin.create({
                 data: {
                     userId: newUser.id,
-                    profilePhoto: profilePhoto
+                    profilePhoto
                 }
             });
         }
 
-        // ৩. রিলেশনসহ ডাটা রিটার্ন (এটি নিশ্চিত করবে Admin/Seller null আসবে না)
         const fullUserData = await tnx.user.findUnique({
             where: { id: newUser.id },
             include: {
@@ -60,26 +56,18 @@ const createUser = async (req: Request) => {
             }
         });
 
-        // ৪. পাসওয়ার্ড সিকিউরিটি: রেসপন্স থেকে পাসওয়ার্ড সরিয়ে ফেলা
         if (fullUserData) {
             (fullUserData as any).password = undefined;
         }
 
         return fullUserData;
     });
-
-    return result;
 };
 
-const getAllUsers = async (
-    params: IUserFilters,
-    options: IPaginationOptions
-) => {
+const getAllUsers = async (params: IUserFilters, options: IPaginationOptions) => {
     const { searchTerm, ...filtersData } = params;
-
     const andConditions: Prisma.UserWhereInput[] = [];
 
-    // 🔍 Search
     if (searchTerm) {
         andConditions.push({
             OR: searchableFileds.map((field) => ({
@@ -91,7 +79,6 @@ const getAllUsers = async (
         });
     }
 
-    // 🎯 Filters
     if (Object.keys(filtersData).length) {
         andConditions.push({
             AND: Object.entries(filtersData).map(([key, value]) => ({
@@ -100,25 +87,22 @@ const getAllUsers = async (
         });
     }
 
-    const { limit, skip, sortBy, sortOrder } =
-        paginationHelpers.calculatePagination(options);
+    const { limit, skip, sortBy, sortOrder } = paginationHelpers.calculatePagination(options);
     const whereConditions: Prisma.UserWhereInput = andConditions.length ? { AND: andConditions } : {};
+
     const users = await prisma.user.findMany({
         skip,
         take: limit,
         where: whereConditions,
-        orderBy:
-            sortBy && sortOrder
-                ? { [sortBy]: sortOrder }
-                : { createdAt: "desc" },
+        orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: "desc" },
         include: {
             admin: true,
             seller: true,
         },
     });
-    const total = await prisma.user.count({
-        where: whereConditions
-    });
+
+    const total = await prisma.user.count({ where: whereConditions });
+
     return {
         meta: {
             page: options.page || 1,
@@ -128,33 +112,56 @@ const getAllUsers = async (
         data: users
     };
 };
+
+const getSingleUser = async (userId: string): Promise<User | null> => {
+    return await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            admin: true,
+            seller: true
+        }
+    });
+};
+
+const updateUser = async (userId: string, payload: Partial<User>, file: Request): Promise<User> => {
+    const user = await prisma.user.findUniqueOrThrow({
+        where: { id: userId }
+    });
+
+    const profilePhoto = await uploadImage(file);
+    const updateData: any = { ...payload };
+
+    if (profilePhoto) {
+        const relationKey = user.role.toLowerCase();
+
+        if (relationKey === 'admin' || relationKey === 'seller') {
+            updateData[relationKey] = {
+                update: { profilePhoto }
+            };
+        }
+    }
+
+    return await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        include: {
+            admin: true,
+            seller: true
+        }
+    });
+};
+
 const userDelete = async (userId: string) => {
-    const deletedUser = await prisma.user.update({
+    return await prisma.user.update({
         where: { id: userId },
         data: { status: UserStatus.INACTIVE },
     });
-    return deletedUser;
-}
-
-const updateUser = async (userId: string, payload: Partial<User>): Promise<User> => {
-    const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: payload,
-    });
-    return updatedUser;
-}
-
-const getSingleUser = async (userId: string): Promise<User | null> => {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-    });
-    return user;
 };
 
 export const userService = {
     createUser,
     getAllUsers,
-    userDelete,
+    getSingleUser,
     updateUser,
-    getSingleUser
+    userDelete
 };

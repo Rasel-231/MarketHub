@@ -6,21 +6,10 @@ import pick from "../../helpers/pick";
 import { categoryFilterableFields, categorySearchableFields } from "./category.constant";
 import httpStatus from "http-status";
 
-const getAllcategory = catchAsync(async (req: Request, res: Response) => {
-    const options = pick(req.query, categorySearchableFields);
-    const filters = pick(req.query, categoryFilterableFields);
-    const result = await categoryService.getAllcategorys(options, filters);
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "category retrieved successfully",
-        data: result,
-    });
-})
 
-const createcategory = catchAsync(async (req: Request, res: Response) => {
+const createCategory = catchAsync(async (req: Request, res: Response) => {
     const categoryData = req.body;
-    const result = await categoryService.createcategory(categoryData);
+    const result = await categoryService.createCategory(categoryData);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -28,18 +17,27 @@ const createcategory = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 })
-
-const deletecategory = catchAsync(async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const result = await categoryService.deletecategory(id as string);
+const getAllCategory = catchAsync(async (req: Request, res: Response) => {
+    const options = pick(req.query, categorySearchableFields);
+    const filters = pick(req.query, categoryFilterableFields);
+    const result = await categoryService.getAllCategorys(options, filters);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "category deleted successfully",
+        message: "category retrieved successfully",
         data: result,
     });
 })
-
+const getSingleCategory = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await categoryService.getSingleCategory(id as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Category retrieved successfully",
+        data: result,
+    });
+})
 const updateCategory = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
     const payload = req.body;
@@ -51,10 +49,22 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 })
+const deleteCategory = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await categoryService.deleteCategory(id as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "category deleted successfully",
+        data: result,
+    });
+})
 
 export const categoryController = {
-    getAllcategory,
-    createcategory,
-    deletecategory,
+    createCategory,
+    getAllCategory,
+    getSingleCategory,
     updateCategory,
+    deleteCategory,
+
 }

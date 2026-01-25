@@ -6,8 +6,21 @@ import { paginationHelpers } from "../../helpers/paginationHelpers";
 import ApiError from "../../shared/ApiError";
 import httpStatus from "http-status";
 
-
-const getAllcategorys = async (options: any, params: any) => {
+const createCategory = async (payload: any) => {
+    const existcategory = await prisma.category.findFirst({
+        where: {
+            name: payload.name
+        }
+    })
+    if (existcategory) {
+        throw new ApiError('Category with this name already exists', httpStatus.CONFLICT);
+    }
+    const result = await prisma.category.create({
+        data: payload
+    });
+    return result;
+}
+const getAllCategorys = async (options: any, params: any) => {
     const { searchTerm, ...filtersData } = params;
     const andConditions: Prisma.CategoryWhereInput[] = [];
 
@@ -55,29 +68,12 @@ const getAllcategorys = async (options: any, params: any) => {
     }
 }
 
-const createcategory = async (payload: any) => {
-    const existcategory = await prisma.category.findFirst({
-        where: {
-            name: payload.name
-        }
-    })
-    if (existcategory) {
-        throw new ApiError('Category with this name already exists', httpStatus.CONFLICT);
-    }
-    const result = await prisma.category.create({
-        data: payload
+const getSingleCategory = async (categoryId: string): Promise<Category | null> => {
+    const category = await prisma.category.findUnique({
+        where: { id: categoryId },
     });
-    return result;
-}
-
-const deletecategory = async (categoryId: string) => {
-    const deletedcategory = await prisma.category.update({
-        where: { id: categoryId, status: CategoryStatus.ACTIVE },
-        data: { status: CategoryStatus.INACTIVE },
-    });
-    return deletedcategory;
-}
-
+    return category;
+};
 const updateCategory = async (categoryId: string, payload: Partial<Category>): Promise<Category> => {
     const updatedCategory = await prisma.category.update({
         where: { id: categoryId, status: CategoryStatus.ACTIVE },
@@ -85,10 +81,21 @@ const updateCategory = async (categoryId: string, payload: Partial<Category>): P
     });
     return updatedCategory;
 }
+//I dont delete category permanently, I just change the status to INACTIVE For Future history Purpose
+const deleteCategory = async (categoryId: string) => {
+    const deletedcategory = await prisma.category.update({
+        where: { id: categoryId, status: CategoryStatus.ACTIVE },
+        data: { status: CategoryStatus.INACTIVE },
+    });
+    return deletedcategory;
+}
+
 
 export const categoryService = {
-    getAllcategorys,
-    createcategory,
-    deletecategory,
-    updateCategory
+    createCategory,
+    getAllCategorys,
+    getSingleCategory,
+    updateCategory,
+    deleteCategory,
+
 };
