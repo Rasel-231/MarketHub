@@ -1,36 +1,41 @@
-
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, PaymentMethod, PaymentStatus } from "@prisma/client";
 import ApiError from "../../shared/ApiError";
-import { prisma as db, prisma } from "../../shared/prisma";
+import { prisma } from "../../shared/prisma";
 import httpStatus from "http-status";
+import { v4 as uuidv4 } from 'uuid';
+import { paymentService } from "../payment/payment.service";
 
 const checkout = async (userId: string, payload: { deliveryAddress: string }) => {
-    return await db.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
         const existingCart = await tx.cart.findUnique({
             where: { userId },
             include: {
-                items: {
-                    include: { product: true }
-                }
+                items: { include: { product: true } },
+                user: true
             }
         });
 
         if (!existingCart || existingCart.items.length === 0) {
-            throw new ApiError("Your cart is empty", httpStatus.BAD_REQUEST);
+            throw new ApiError("আপনার কার্ট খালি!", httpStatus.BAD_REQUEST);
         }
 
+        // স্টক চেক এবং কমানো
         for (const item of existingCart.items) {
             if (item.product.stock < item.quantity) {
                 throw new ApiError(
-                    `Product ${item.product.title} is out of stock. Available: ${item.product.stock}`,
+                    `${item.product.title} পর্যাপ্ত স্টকে নেই।`,
                     httpStatus.BAD_REQUEST
                 );
             }
+
+            await tx.products.update({
+                where: { id: item.productId },
+                data: { stock: { decrement: item.quantity } }
+            });
         }
 
         const totalAmount = existingCart.items.reduce(
-            (acc, item) => acc + (item.quantity * item.price),
-            0
+            (acc, item) => acc + (item.quantity * item.price), 0
         );
 
         const createOrder = await tx.order.create({
@@ -38,7 +43,7 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
                 userId,
                 totalAmount,
                 deliveryAddress: payload.deliveryAddress,
-                status: "PENDING",
+                status: OrderStatus.PENDING,
                 orderItems: {
                     create: existingCart.items.map(item => ({
                         productId: item.productId,
@@ -46,33 +51,43 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
                         unitPrice: item.price
                     }))
                 }
-            },
-            include: {
-                orderItems: true
             }
         });
 
-        for (const item of existingCart.items) {
-            await tx.products.update({
-                where: { id: item.productId },
-                data: {
-                    stock: {
-                        decrement: item.quantity
-                    }
-                }
-            });
-        }
+        const transactionId = uuidv4();
+
+        await tx.payment.create({
+            data: {
+                orderId: createOrder.id,
+                userId: userId,
+                amount: totalAmount,
+                transactionId: transactionId,
+                paymentMethod: PaymentMethod.ONLINE,
+                paymentStatus: PaymentStatus.UNPAID
+            }
+        });
 
         await tx.cartItem.deleteMany({
             where: { cartId: existingCart.id }
         });
 
-        return createOrder;
+        return {
+            amount: totalAmount,
+            transactionId,
+            name: existingCart.user?.name,
+            email: existingCart.user?.email,
+            contactNumber: existingCart.user?.contactNumber,
+            address: payload.deliveryAddress
+        };
     });
+
+    const paymentUrl = await paymentService.initiatePaymentService(result);
+
+    return { paymentUrl };
 };
 
 const getMyOrders = async (userId: string) => {
-    return await db.order.findMany({
+    return await prisma.order.findMany({
         where: { userId },
         include: {
             orderItems: {
@@ -84,7 +99,7 @@ const getMyOrders = async (userId: string) => {
 };
 
 const getSingleOrder = async (orderId: string, userId: string) => {
-    return await db.order.findFirstOrThrow({
+    return await prisma.order.findFirstOrThrow({
         where: {
             id: orderId,
             userId: userId
@@ -98,23 +113,23 @@ const getSingleOrder = async (orderId: string, userId: string) => {
 };
 
 const cancelOrder = async (userId: string, orderId: string): Promise<void> => {
-    return await prisma.$transaction(async (tr) => {
+    await prisma.$transaction(async (tr) => {
         const existingOrder = await tr.order.findUnique({
             where: { id: orderId },
             include: { orderItems: true }
         });
 
         if (!existingOrder) {
-            throw new ApiError("Order not found", httpStatus.NOT_FOUND,);
+            throw new ApiError("অর্ডারটি পাওয়া যায়নি", httpStatus.NOT_FOUND);
         }
 
         if (existingOrder.userId !== userId) {
-            throw new ApiError("Unauthorized access", httpStatus.FORBIDDEN,);
+            throw new ApiError("আপনার এই অর্ডারটি বাতিল করার অনুমতি নেই", httpStatus.FORBIDDEN);
         }
 
         const restrictedStatuses: OrderStatus[] = [OrderStatus.CANCELLED, OrderStatus.DELIVERED];
         if (restrictedStatuses.includes(existingOrder.status)) {
-            throw new ApiError(`Order cannot be cancelled in ${existingOrder.status} state`, httpStatus.BAD_REQUEST,);
+            throw new ApiError(`অর্ডারটি ইতিমধ্যে ${existingOrder.status} অবস্থায় আছে, তাই বাতিল করা যাবে না।`, httpStatus.BAD_REQUEST);
         }
 
         await tr.order.update({
@@ -122,22 +137,18 @@ const cancelOrder = async (userId: string, orderId: string): Promise<void> => {
             data: { status: OrderStatus.CANCELLED }
         });
 
-        await Promise.all(
-            existingOrder.orderItems.map((item) =>
-                tr.products.update({
-                    where: { id: item.productId },
-                    data: {
-                        stock: {
-                            increment: item.quantity
-                        }
-                    }
-                })
-            )
-        );
-    }, {
-        isolationLevel: "Serializable"
+        // স্টক ফিরিয়ে দেওয়া
+        for (const item of existingOrder.orderItems) {
+            await tr.products.update({
+                where: { id: item.productId },
+                data: {
+                    stock: { increment: item.quantity }
+                }
+            });
+        }
     });
 };
+
 export const orderService = {
     checkout,
     getMyOrders,

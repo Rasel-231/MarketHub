@@ -5,8 +5,11 @@ import { cartService } from "./cart.services";
 import httpStatus from "http-status";
 
 
+
 const addProductToCart = catchAsync(async (req: Request, res: Response) => {
-    const result = await cartService.addProductToCart(req.body);
+    const user = (req as any).user;
+    console.log("userId", user.userId);
+    const result = await cartService.addProductToCart(user.userId, req.body);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -30,7 +33,8 @@ const updateCartItemQuantity = catchAsync(async (req: Request, res: Response) =>
 });
 
 const getCart = catchAsync(async (req: Request, res: Response) => {
-    const result = await cartService.getMyCart(req.body)
+    const user = (req as any).user;
+    const result = await cartService.getMyCart(user.userId)
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

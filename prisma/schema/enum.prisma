@@ -30,6 +30,7 @@ enum PaymentStatus {
   UNPAID
   PAID
   REFUNDED
+  FAILD
 }
 
 enum PaymentMethod {

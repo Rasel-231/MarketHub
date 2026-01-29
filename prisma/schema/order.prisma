@@ -4,9 +4,7 @@ model Order {
   user           User           @relation(fields: [userId], references: [id])
   totalAmount    Float
   status         OrderStatus    @default(PENDING)
-  paymentStatus  PaymentStatus  @default(UNPAID)
-  paymentMethod  PaymentMethod  @default(CASH_ON_DELIVERY)
-  transactionId  String?        @unique
+  payment        Payment[]
   deliveryAddress String
   orderItems     OrderItem[]
   createdAt      DateTime       @default(now())

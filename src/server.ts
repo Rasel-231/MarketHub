@@ -1,6 +1,7 @@
 import { Server } from 'http';
 import app from './app';
 import config from './config';
+import startOrderCleanupCron from './app/modules/order/order.cron';
 
 
 async function bootstrap() {
@@ -10,7 +11,7 @@ async function bootstrap() {
     try {
         // Start the server
         server = app.listen(config.port, () => {
-
+            startOrderCleanupCron();
         });
 
         // Function to gracefully shut down the server

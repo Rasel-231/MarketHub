@@ -1,0 +1,13 @@
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id])
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  amount        Float
+  transactionId String        @unique
+  paymentStatus        PaymentStatus
+  paymentMethod  PaymentMethod  
+  createdAt     DateTime      @default(now())
+  @@map("payments")
+}

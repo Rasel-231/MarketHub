@@ -6,9 +6,10 @@ import { orderService } from "./order.service";
 
 const checkout = catchAsync(async (req: Request, res: Response) => {
     const user = (req as any).user;
+    console.log("User", user);
 
 
-    const result = await orderService.checkout(user.id, req.body);
+    const result = await orderService.checkout(user.userId, req.body);
 
     sendResponse(res, {
         statusCode: httpStatus.CREATED,

@@ -8,6 +8,7 @@ import { cartRoutes } from '../modules/cart/cart.routes';
 import { adminRoutes } from '../modules/admin/admin.routes';
 import { reviewRoutes } from '../modules/review/review.routes';
 import { aiRoutes } from '../utils/AssistantAi/aiAssitant.route';
+import { paymentRoutes } from '../modules/payment/payemtn.routes';
 
 
 const router = express.Router();
@@ -16,6 +17,10 @@ const moduleRoutes = [
     {
         path: '/user',
         route: userRoutes
+    },
+    {
+        path: '/payments',
+        route: paymentRoutes,
     },
     {
         path: '/auth',

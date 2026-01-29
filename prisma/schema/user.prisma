@@ -9,7 +9,8 @@ model User {
   seller         Seller?
   admin          Admin?
   products      Products[]
-  orders         Order[] 
+  orders         Order[]
+  payment       Payment []
   aIChatSession  AIChatSession[]
   cart           Cart? 
   review        Review[] 

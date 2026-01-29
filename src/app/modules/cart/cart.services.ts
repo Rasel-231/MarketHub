@@ -4,7 +4,8 @@ import { prisma } from "../../shared/prisma";
 import httpStatus from "http-status";
 import { ICart } from "./cart.interface";
 
-const addProductToCart = async (payload: ICart) => {
+const addProductToCart = async (userId: string, payload: ICart) => {
+
     const product = await prisma.products.findUniqueOrThrow({
         where: { id: payload.productId }
     });
@@ -18,12 +19,12 @@ const addProductToCart = async (payload: ICart) => {
     }
 
     let cart = await prisma.cart.findUnique({
-        where: { userId: payload.userId }
+        where: { userId: userId }
     });
 
     if (!cart) {
         cart = await prisma.cart.create({
-            data: { userId: payload.userId }
+            data: { userId }
         });
     }
 
