@@ -9,7 +9,6 @@ import { userFilterableFields } from "./user.constant";
 
 const createUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const result = await userService.createUser(req);
-    console.log("Database Result with Cloudinary URL:", result);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

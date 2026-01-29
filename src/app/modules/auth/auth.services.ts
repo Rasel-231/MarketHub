@@ -7,11 +7,10 @@ import httpStatus from "http-status";
 
 
 const login = async (payload: { email: string, password: string }) => {
-    console.log(payload);
     const user = await prisma.user.findUniqueOrThrow({
         where: {
             email: payload.email,
-            status: UserStatus.Active
+            status: UserStatus.ACTIVE
         }
     })
 

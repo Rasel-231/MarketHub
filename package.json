@@ -13,6 +13,7 @@
     "schema": "./prisma/schema"
   },
   "dependencies": {
+    "@openrouter/sdk": "^0.5.1",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "7.2.0",
     "axios": "^1.13.2",

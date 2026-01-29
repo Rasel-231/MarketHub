@@ -38,7 +38,7 @@ const uploadToCloudinary = async (file: Express.Multer.File): Promise<UploadApiR
         if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
         }
-        console.log("Cloudinary Error:", error);
+
     }
 };
 

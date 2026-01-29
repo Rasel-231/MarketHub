@@ -10,14 +10,14 @@ const createProducts = async (req: Request) => {
     const payload = typeof req.body.data === 'string'
         ? JSON.parse(req.body.data)
         : req.body;
-    console.log("Paylod", payload);
+
 
     let product_image: string[] = [];
 
     if (req.file) {
         const uploadedResult = await fileUploader.uploadToCloudinary(req.file);
         product_image = [uploadedResult?.secure_url as string];
-        console.log("Product_Images", product_image);
+
     }
 
 
@@ -137,12 +137,83 @@ const deleteProducts = async (productId: string) => {
     });
     return deletedProduct;
 }
+
+const searchProductsForChatbot = async (query: any) => {
+    const { keyword, brand, categoryId, minPrice, maxPrice } = query;
+
+    const andConditions: Prisma.ProductsWhereInput[] = [];
+
+    if (keyword) {
+        andConditions.push({
+            OR: [
+                { title: { contains: keyword, mode: "insensitive" } },
+                { description: { contains: keyword, mode: "insensitive" } },
+            ],
+        });
+    }
+
+    if (brand) {
+        andConditions.push({ brand: { contains: brand, mode: "insensitive" } });
+    }
+
+    if (categoryId) {
+        andConditions.push({ categoryId: categoryId });
+    }
+
+    if (minPrice || maxPrice) {
+        andConditions.push({
+            price: {
+                gte: minPrice ? parseFloat(minPrice) : undefined,
+                lte: maxPrice ? parseFloat(maxPrice) : undefined,
+            },
+        });
+    }
+
+    andConditions.push({ stock: { gt: 0 } });
+    andConditions.push({ status: ProductStatus.AVAILABLE });
+
+    const whereConditions: Prisma.ProductsWhereInput = andConditions.length
+        ? { AND: andConditions }
+        : {};
+
+    const products = await prisma.products.findMany({
+        where: whereConditions,
+        take: 10,
+        orderBy: { createdAt: "desc" },
+        include: { review: true, category: true, seller: true },
+    });
+
+    // rating average calculate
+    const formatted = products.map((p) => {
+        const total = p.review.reduce((sum, r) => sum + r.rating, 0);
+        const count = p.review.length;
+        const avg = count > 0 ? +(total / count).toFixed(1) : 0;
+
+        return {
+            id: p.id,
+            title: p.title,
+            price: p.price,
+            stock: p.stock,
+            brand: p.brand,
+            images: p.images,
+            status: p.status,
+            category: p.category,
+            seller: p.seller,
+            ratingAvg: avg,
+            ratingCount: count,
+        };
+    });
+
+    return formatted;
+};
+
 export const productsService = {
     createProducts,
     getAllProducts,
     getSingleProducts,
     updateProducts,
     deleteProducts,
+    searchProductsForChatbot,
 
 
 };

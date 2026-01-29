@@ -1,0 +1,25 @@
+model AIChatSession {
+  id        String   @id @default(uuid())
+  userId    String @unique
+   role      ChatRole @default(USER)
+  user      User     @relation(fields: [userId], references: [id])
+  messages  Json 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("ai_chat_sessions")
+}
+
+enum ChatRole {
+  USER
+  MODEL
+}
+
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  @@map("wishlists")
+}
