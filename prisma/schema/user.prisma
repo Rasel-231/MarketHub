@@ -10,7 +10,8 @@ model User {
   admin          Admin?
   products      Products[]
   orders         Order[]     
-  cart           Cart?    
+  cart           Cart? 
+  review        Review[] 
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   @@map("users")

@@ -40,7 +40,7 @@ const createProducts = async (req: Request) => {
 };
 
 const getAllProducts = async (options: any, params: any) => {
-    const { searchTerm, ...filtersData } = params;
+    const { searchTerm, minPrice, maxPrice, ...filtersData } = params;
     const andConditions: Prisma.ProductsWhereInput[] = [];
 
     //search term
@@ -50,6 +50,15 @@ const getAllProducts = async (options: any, params: any) => {
                 [field]: { contains: searchTerm, mode: "insensitive" }
             }))
         })
+    }
+
+    if (minPrice || maxPrice) {
+        andConditions.push({
+            price: {
+                gte: minPrice ? parseFloat(minPrice as string) : undefined,
+                lte: maxPrice ? parseFloat(maxPrice as string) : undefined
+            }
+        });
     }
 
     //filters Data
@@ -72,6 +81,7 @@ const getAllProducts = async (options: any, params: any) => {
             sortBy && sortOrder
                 ? { [sortBy]: sortOrder }
                 : { createdAt: "desc" },
+        include: { review: true }
     });
 
     const total = await prisma.products.count({

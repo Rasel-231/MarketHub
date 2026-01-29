@@ -9,7 +9,8 @@ model Products {
   cartItems   CartItem[]
   brand       String
   orderItems  OrderItem[]
-  images      String[]      // multiple images
+  review      Review[]
+  images      String[]      
   status      ProductStatus @default(AVAILABLE)
   categoryId  String
   category    Category      @relation(fields: [categoryId], references: [id])
