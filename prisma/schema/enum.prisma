@@ -1,6 +1,3 @@
-// --------------------
-// ENUMS
-// --------------------
 enum UserRole {
   BUYER
   SELLER
@@ -12,7 +9,6 @@ enum UserStatus {
   INACTIVE
   SUSPENDED
 }
-
 
 enum ProductStatus {
   AVAILABLE
@@ -36,7 +32,9 @@ enum PaymentStatus {
 enum PaymentMethod {
   CASH_ON_DELIVERY
   ONLINE
+  BANK
 }
+
 enum ShippingMethod {
   STANDARD
   EXPRESS
@@ -46,4 +44,19 @@ enum ShippingMethod {
 enum CategoryStatus {
   ACTIVE
   INACTIVE
+}
+
+enum Size {
+  sm
+  m
+  xl
+  xxl
+}
+
+enum Colour {
+  red
+  blue
+  green
+  yellow
+  cyan
 }

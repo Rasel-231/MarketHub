@@ -4,6 +4,7 @@ import { prisma } from "../../shared/prisma";
 import httpStatus from "http-status";
 import { ICart } from "./cart.interface";
 
+
 const addProductToCart = async (userId: string, payload: ICart) => {
 
     const product = await prisma.products.findUniqueOrThrow({
@@ -38,59 +39,54 @@ const addProductToCart = async (userId: string, payload: ICart) => {
         update: {
             quantity: {
                 increment: payload.quantity
-            }
+            },
+            flashSalePrice: Number(payload.flashSalePrice)
         },
+
         create: {
             cartId: cart.id,
             productId: payload.productId,
             quantity: payload.quantity,
-            price: product.price
+            flashSalePrice: Number(payload.flashSalePrice)
+
         }
     });
 };
 
-const updateQuantity = async (payload: ICart) => {
-    const cart = await prisma.cart.findUniqueOrThrow({
-        where: { userId: payload.userId }
+
+
+const updateQuantity = async (itemId: string, quantity: number) => {
+    const cartItem = await prisma.cartItem.findUniqueOrThrow({
+        where: { id: itemId },
+        include: { product: true }
     });
 
-    if (payload.quantity <= 0) {
+    if (quantity <= 0) {
         return await prisma.cartItem.delete({
-            where: {
-                cartId_productId: {
-                    cartId: cart.id,
-                    productId: payload.productId
-                }
-            }
+            where: { id: itemId }
         });
     }
 
-    const product = await prisma.products.findUniqueOrThrow({
-        where: { id: payload.productId }
-    });
-
-    if (payload.quantity > product.stock) {
-        throw new ApiError(`Stock limit exceeded. Only ${product.stock} left`, httpStatus.BAD_REQUEST);
+    const availableStock = cartItem.product.stock;
+    if (quantity > availableStock) {
+        throw new ApiError(`Only ${availableStock} items available in stock`, httpStatus.BAD_REQUEST);
     }
 
     return await prisma.cartItem.update({
-        where: {
-            cartId_productId: {
-                cartId: cart.id,
-                productId: payload.productId
-            }
-        },
-        data: {
-            quantity: payload.quantity
-        }
+        where: { id: itemId },
+        data: { quantity }
     });
 };
+
 
 const getMyCart = async (userId: string) => {
     const cart = await prisma.cart.findUnique({
         where: { userId },
         include: {
             items: {
+                orderBy: {
+                    createdAt: "desc"
+                },
                 include: {
                     product: true
                 }
@@ -100,16 +96,29 @@ const getMyCart = async (userId: string) => {
 
     if (!cart) return { items: [], totalAmount: 0 };
 
-    const totalAmount = cart.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
-
+    const totalAmount = cart.items.reduce((acc, item) => {
+        const price = item.flashSalePrice ?? 0;
+        return acc + (item.quantity * price);
+    }, 0);
     return {
         items: cart.items,
         totalAmount
     };
 };
 
+
+
+
+const deleteCartItem = async (itemId: string) => {
+    const deletedItem = await prisma.cartItem.delete({
+        where: { id: itemId },
+    });
+    return deletedItem;
+};
+
 export const cartService = {
     addProductToCart,
     updateQuantity,
-    getMyCart
+    getMyCart,
+    deleteCartItem
 };

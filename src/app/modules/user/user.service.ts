@@ -5,7 +5,7 @@ import { Request } from "express";
 import { fileUploader } from "../../helpers/fileUploader";
 import config from "../../../config";
 import { paginationHelpers } from "../../helpers/paginationHelpers";
-import { IPaginationOptions, IUserFilters } from "./user.interface";
+import { IPaginationOptions, IUserFilters, UpdateUserPayload } from "./user.interface";
 import { searchableFileds } from "./user.constant";
 import { uploadImage } from "../../utils/imageUpload";
 
@@ -30,7 +30,7 @@ const createUser = async (payload: Request) => {
             }
         });
 
-        if (payload.body.role === 'Seller') {
+        if (payload.body.role === 'SELLER') {
             await tnx.seller.create({
                 data: {
                     userId: newUser.id,
@@ -39,7 +39,7 @@ const createUser = async (payload: Request) => {
                     shopSlug: payload.body.shopSlug || null
                 }
             });
-        } else if (payload.body.role === 'Admin') {
+        } else if (payload.body.role === 'ADMIN') {
             await tnx.admin.create({
                 data: {
                     userId: newUser.id,
@@ -122,23 +122,55 @@ const getSingleUser = async (userId: string): Promise<User | null> => {
         }
     });
 };
+const getMyProfile = async (userId: string): Promise<User | null> => {
+    return await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            admin: true,
+            seller: true
+        }
+    });
+};
 
-const updateUser = async (userId: string, payload: Partial<User>, file: Request): Promise<User> => {
-    const user = await prisma.user.findUniqueOrThrow({
-        where: { id: userId }
+
+
+
+
+const updateUser = async (
+    userId: string,
+    payload: UpdateUserPayload,
+    profile_images?: any
+): Promise<any> => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { admin: true, seller: true }
     });
 
-    const profilePhoto = await uploadImage(file);
-    const updateData: any = { ...payload };
+    if (!user) {
+        throw new Error("User not found!");
+    }
 
-    if (profilePhoto) {
-        const relationKey = user.role.toLowerCase();
+    const { shopName, ...userData } = payload;
+    const relationKey = user.role.toLowerCase() as 'admin' | 'seller';
 
-        if (relationKey === 'admin' || relationKey === 'seller') {
-            updateData[relationKey] = {
-                update: { profilePhoto }
-            };
+    const updateData: Prisma.UserUpdateInput = { ...userData };
+    const nestedUpdateData: Record<string, any> = {};
+
+    if (profile_images) {
+        const profilePhoto = await uploadImage(profile_images);
+        if (profilePhoto) {
+            nestedUpdateData.profilePhoto = profilePhoto;
         }
+    }
+
+    if (shopName && relationKey === 'seller') {
+        nestedUpdateData.shopName = shopName;
+    }
+
+    if (Object.keys(nestedUpdateData).length > 0) {
+        updateData[relationKey] = {
+            update: nestedUpdateData
+        };
     }
 
     return await prisma.user.update({
@@ -158,10 +190,14 @@ const userDelete = async (userId: string) => {
     });
 };
 
+
+
 export const userService = {
+    getMyProfile,
     createUser,
     getAllUsers,
     getSingleUser,
     updateUser,
-    userDelete
+    userDelete,
+
 };

@@ -1,9 +1,23 @@
 model Category {
-  id            String     @id @default(uuid())
-  name          String     @unique
-  products      Products[]
-  status       CategoryStatus @default(ACTIVE)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id          String              @id @default(uuid())
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  name        String              @unique
+  status      CategoryStatus      @default(ACTIVE)
+  products    Products[]
+  attributes  CategoryAttribute[] 
+
   @@map("categories")
+}
+
+model CategoryAttribute {
+  id         String   @id @default(uuid())
+  groupName  String   
+  label      String  
+  options    String[]
+  type       String   @default("text") 
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@map("category_attributes")
 }

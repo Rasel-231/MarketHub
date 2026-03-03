@@ -30,6 +30,7 @@ const getAllUsers = catchAsync(async (req: Request, res: Response): Promise<void
 })
 const getSingleUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
+
     const result = await userService.getSingleUser(id as string);
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -38,18 +39,30 @@ const getSingleUser = catchAsync(async (req: Request, res: Response): Promise<vo
         data: result,
     });
 })
+const getMyProfile = catchAsync(async (req: Request & { user?: any }, res: Response): Promise<void> => {
+    const { userId } = req.user;
+    const result = await userService.getMyProfile(userId);
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Profile retrieved successfully!",
+        data: result,
+    });
+});
 const updateUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const payload = req.body;
     const file = req.file;
-    const result = await userService.updateUser(id as string, payload, file as unknown as Request);
+
+    const result = await userService.updateUser(id, payload, file);
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "User updated successfully!",
         data: result,
     });
-})
+});
 const deleteUser = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const result = await userService.userDelete(id as string);
@@ -69,6 +82,7 @@ export const userController = {
     getSingleUser,
     updateUser,
     deleteUser,
+    getMyProfile
 
 
 }

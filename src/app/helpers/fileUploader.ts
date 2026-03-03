@@ -25,6 +25,7 @@ const uploadToCloudinary = async (file: Express.Multer.File): Promise<UploadApiR
     try {
         const uploadResult = await cloudinary.uploader.upload(file.path, {
             public_id: file.filename,
+
         });
 
         // আপলোড শেষে লোকাল ফাইল ডিলিট করা
@@ -34,7 +35,6 @@ const uploadToCloudinary = async (file: Express.Multer.File): Promise<UploadApiR
 
         return uploadResult;
     } catch (error) {
-        // এরর হলেও ফাইল ডিলিট করা যাতে স্টোরেজ জ্যাম না হয়
         if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
         }

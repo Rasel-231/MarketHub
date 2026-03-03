@@ -4,5 +4,7 @@ import { auth } from "../../middlewares/auth";
 const router = express.Router();
 router.post("/add", auth(), cartController.addProductToCart);
 router.get("/get-cart", auth(), cartController.getCart);
-router.patch("/update-quantity", cartController.updateCartItemQuantity);
+router.patch("/:id", cartController.updateQuantity);
+router.delete("/:id", auth(), cartController.deleteCartItem);
+
 export const cartRoutes = router;

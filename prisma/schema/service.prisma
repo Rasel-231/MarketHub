@@ -1,0 +1,11 @@
+model Message {
+  id            String   @id @default(uuid())
+  message       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  contactNumber String
+  email         String
+  name          String
+
+  @@map("messages")
+}

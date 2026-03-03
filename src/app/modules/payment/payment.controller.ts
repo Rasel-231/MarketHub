@@ -3,6 +3,8 @@ import { paymentService } from './payment.service';
 import catchAsync from '../../shared/catchAsync';
 import config from '../../../config';
 import { PaymentStatus } from '@prisma/client';
+import sendResponse from '../../shared/sendResponse';
+import httpStatus from 'http-status';
 
 const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
     const result = await paymentService.validatePaymentService(req.body);
@@ -26,8 +28,19 @@ const paymentCancel = catchAsync(async (req: Request, res: Response) => {
     res.redirect(`${config.frontend_url}/payment-cancel`);
 });
 
+const initiatePayment = catchAsync(async (req: Request, res: Response) => {
+    const result = await paymentService.initiatePaymentService(req.body);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Payment gateway URL generated",
+        data: result,
+    });
+});
 export const paymentController = {
     paymentSuccess,
     paymentFail,
-    paymentCancel
+    paymentCancel,
+    initiatePayment
 };

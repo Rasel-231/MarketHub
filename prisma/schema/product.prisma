@@ -1,22 +1,47 @@
 model Products {
-  id          String        @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  stock       Int
-  userId     String
-  user       User          @relation(fields: [userId], references: [id])
-  cartItems   CartItem[]
-  brand       String
-  orderItems  OrderItem[]
-  review      Review[]
-  images      String[]      
-  status      ProductStatus @default(AVAILABLE)
-  categoryId  String
-  category    Category      @relation(fields: [categoryId], references: [id])
-  sellerId    String
-  seller      Seller        @relation(fields: [sellerId], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                 String        @id @default(uuid())
+  title              String
+  description        String
+  productActualPrice Float         @default(0)
+  discountedRate     Float         @default(0)
+  images             String[]
+  stock              Int
+  brand              String
+  model              String?
+  status             ProductStatus @default(AVAILABLE)
+  isFeatured         Boolean       @default(false)
+  flashSalePrice     Decimal?
+  flashSaleStart     DateTime?
+  flashSaleEnd       DateTime?
+  categoryId         String
+  specifications     Json?          @default("{}")
+  category           Category      @relation(fields: [categoryId], references: [id])
+  sellerId           String
+  seller             Seller        @relation(fields: [sellerId], references: [id]) 
+  userId             String
+  user               User          @relation(fields: [userId], references: [id])
+  orderItems         OrderItem[]
+  review             Review[]
+  wishlist           Wishlist[]
+  cartItems          CartItem[]
+  relatedProducts    Products[]    @relation("ProductRelations")
+  relatesTo          Products[]    @relation("ProductRelations")
+  colour             Colour[]
+  size               Size[]
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
   @@map("products")
+}
+
+model Wishlist {
+  id String @id @default(uuid())
+  userId        String
+  user          User @relation(fields: [userId], references: [id])
+  products      Products @relation(fields: [productId], references: [id])
+  productId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("wishlist")
 }

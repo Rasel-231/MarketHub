@@ -49,11 +49,18 @@ const getAllCategorys = async (options: any, params: any) => {
         skip,
         take: limit,
         where: whereConditions,
+        include: {
+            _count: {
+                select: { products: true },
+            },
+            attributes: true,
+        },
+
         orderBy:
             sortBy && sortOrder
                 ? { [sortBy]: sortOrder }
                 : { createdAt: "desc" },
-    });
+    })
 
     const total = await prisma.category.count({
         where: whereConditions
@@ -71,6 +78,9 @@ const getAllCategorys = async (options: any, params: any) => {
 const getSingleCategory = async (categoryId: string): Promise<Category | null> => {
     const category = await prisma.category.findUnique({
         where: { id: categoryId },
+        include: {
+            attributes: true,
+        },
     });
     return category;
 };

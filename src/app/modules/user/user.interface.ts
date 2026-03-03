@@ -21,3 +21,7 @@ export type IPaginationOptions = {
     sortBy?: keyof User;
     sortOrder?: "asc" | "desc";
 };
+
+export interface UpdateUserPayload extends Partial<User> {
+    shopName?: string;
+}

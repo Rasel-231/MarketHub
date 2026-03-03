@@ -5,7 +5,7 @@ import httpStatus from "http-status";
 import { v4 as uuidv4 } from 'uuid';
 import { paymentService } from "../payment/payment.service";
 
-const checkout = async (userId: string, payload: { deliveryAddress: string }) => {
+const checkout = async (userId: string, payload: { deliveryAddress: string, paymentMethod: PaymentMethod }) => {
     const result = await prisma.$transaction(async (tx) => {
         const existingCart = await tx.cart.findUnique({
             where: { userId },
@@ -19,7 +19,6 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
             throw new ApiError("আপনার কার্ট খালি!", httpStatus.BAD_REQUEST);
         }
 
-        // স্টক চেক এবং কমানো
         for (const item of existingCart.items) {
             if (item.product.stock < item.quantity) {
                 throw new ApiError(
@@ -27,7 +26,6 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
                     httpStatus.BAD_REQUEST
                 );
             }
-
             await tx.products.update({
                 where: { id: item.productId },
                 data: { stock: { decrement: item.quantity } }
@@ -35,8 +33,9 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
         }
 
         const totalAmount = existingCart.items.reduce(
-            (acc, item) => acc + (item.quantity * item.price), 0
+            (acc, item) => acc + (item.quantity * item.sellingPrice), 0
         );
+
 
         const createOrder = await tx.order.create({
             data: {
@@ -48,7 +47,7 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
                     create: existingCart.items.map(item => ({
                         productId: item.productId,
                         quantity: item.quantity,
-                        unitPrice: item.price
+                        unitPrice: item.sellingPrice
                     }))
                 }
             }
@@ -56,13 +55,14 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
 
         const transactionId = uuidv4();
 
+
         await tx.payment.create({
             data: {
                 orderId: createOrder.id,
                 userId: userId,
                 amount: totalAmount,
                 transactionId: transactionId,
-                paymentMethod: PaymentMethod.ONLINE,
+                paymentMethod: payload.paymentMethod,
                 paymentStatus: PaymentStatus.UNPAID
             }
         });
@@ -77,13 +77,28 @@ const checkout = async (userId: string, payload: { deliveryAddress: string }) =>
             name: existingCart.user?.name,
             email: existingCart.user?.email,
             contactNumber: existingCart.user?.contactNumber,
-            address: payload.deliveryAddress
+            deliveryAddress: payload.deliveryAddress,
+            paymentMethod: payload.paymentMethod,
+            orderId: createOrder.id
         };
     });
 
-    const paymentUrl = await paymentService.initiatePaymentService(result);
 
-    return { paymentUrl };
+    if (result.paymentMethod === PaymentMethod.ONLINE) {
+        const paymentUrl = await paymentService.initiatePaymentService(result);
+        return {
+            paymentUrl,
+            transactionId: result.transactionId,
+            orderId: result.orderId
+        };
+    }
+
+
+    return {
+        paymentUrl: null,
+        transactionId: result.transactionId,
+        orderId: result.orderId
+    };
 };
 
 const getMyOrders = async (userId: string) => {
@@ -92,11 +107,14 @@ const getMyOrders = async (userId: string) => {
         include: {
             orderItems: {
                 include: { product: true }
-            }
+            },
+            payment: true
         },
+
         orderBy: { createdAt: 'desc' }
     });
 };
+
 
 const getSingleOrder = async (orderId: string, userId: string) => {
     return await prisma.order.findFirstOrThrow({
@@ -107,7 +125,8 @@ const getSingleOrder = async (orderId: string, userId: string) => {
         include: {
             orderItems: {
                 include: { product: true }
-            }
+            },
+            payment: true
         }
     });
 };
@@ -153,5 +172,5 @@ export const orderService = {
     checkout,
     getMyOrders,
     getSingleOrder,
-    cancelOrder
+    cancelOrder,
 };

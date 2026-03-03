@@ -11,6 +11,7 @@ const is_live = config.base_url === 'production';
 const initiatePaymentService = async (payload: any) => {
     const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
 
+
     const data = {
         total_amount: payload.amount,
         currency: 'BDT',

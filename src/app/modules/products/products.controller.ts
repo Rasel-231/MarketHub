@@ -3,9 +3,19 @@ import catchAsync from "../../shared/catchAsync"
 import sendResponse from "../../shared/sendResponse";
 import { productsService } from "./products.service";
 import pick from "../../helpers/pick";
-import { productFilterableFields, productSearchableFields } from "./products.constant";
+import { productFilterableFields } from "./products.constant";
 import httpStatus from "http-status";
 
+
+const createAttribute = catchAsync(async (req: Request, res: Response) => {
+    const result = await productsService.createAttribute(req);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Attribute created successfully",
+        data: result,
+    });
+})
 
 const createProduct = catchAsync(async (req: Request, res: Response) => {
     const result = await productsService.createProducts(req);
@@ -17,13 +27,25 @@ const createProduct = catchAsync(async (req: Request, res: Response) => {
     });
 })
 const getAllProducts = catchAsync(async (req: Request, res: Response) => {
-    const options = pick(req.query, productSearchableFields);
+    const options = pick(req.query, ['page', 'limit', 'sortBy', 'sortOrder']);
     const filters = pick(req.query, productFilterableFields);
+    console.log("options", options);
+    console.log("filters", filters);
     const result = await productsService.getAllProducts(options, filters);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "Products retrieved successfully",
+        data: result,
+    });
+})
+const getAttributeByCategory = catchAsync(async (req: Request, res: Response) => {
+
+    const result = await productsService.getAttributesByCategory(req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Attribute retrieved successfully",
         data: result,
     });
 })
@@ -59,6 +81,8 @@ const deleteProduct = catchAsync(async (req: Request, res: Response) => {
 })
 
 export const productController = {
+    createAttribute,
+    getAttributeByCategory,
     createProduct,
     getAllProducts,
     getSingleProducts,

@@ -34,6 +34,7 @@ const login = async (payload: { email: string, password: string }) => {
     };
 };
 
+
 export const authService = {
     login
 };

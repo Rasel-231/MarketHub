@@ -9,6 +9,10 @@ import { adminRoutes } from '../modules/admin/admin.routes';
 import { reviewRoutes } from '../modules/review/review.routes';
 import { aiRoutes } from '../utils/AssistantAi/aiAssitant.route';
 import { paymentRoutes } from '../modules/payment/payemtn.routes';
+import { contactRoutes } from '../modules/contact/contact.routes';
+import { wishlistRoutes } from '../modules/wishlist/wishlist.routes';
+import { flagRoutes } from '../modules/productFlag/flag.routes';
+
 
 
 const router = express.Router();
@@ -19,7 +23,7 @@ const moduleRoutes = [
         route: userRoutes
     },
     {
-        path: '/payments',
+        path: '/payment',
         route: paymentRoutes,
     },
     {
@@ -35,8 +39,17 @@ const moduleRoutes = [
         route: cartRoutes,
     },
     {
+        path: '/wishlist',
+        route: wishlistRoutes
+        ,
+    },
+    {
         path: '/products',
         route: productsRoutes
+    },
+    {
+        path: '/flag',
+        route: flagRoutes
     },
     {
         path: '/admin',
@@ -45,6 +58,10 @@ const moduleRoutes = [
     {
         path: '/assistant',
         route: aiRoutes
+    },
+    {
+        path: '/contact/messages',
+        route: contactRoutes
     },
     {
         path: '/review',

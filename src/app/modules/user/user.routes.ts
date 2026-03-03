@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import { userController } from "./user.controller";
 import { UserValidation } from "./userValidation";
 import { fileUploader } from "../../helpers/fileUploader";
@@ -10,6 +10,8 @@ import validateRequest from "../../middlewares/validateRequest";
 const router = express.Router();
 router.get("/", auth(UserRole.ADMIN), userController.getAllUsers);
 router.post("/create-user", fileUploader.upload.single("profile_images"), parseData, validateRequest(UserValidation.createUserValidationSchema), userController.createUser);
+
+router.get("/profile", auth(UserRole.ADMIN, UserRole.BUYER, UserRole.SELLER), userController.getMyProfile);
 router.get("/:id", auth(UserRole.ADMIN), userController.getSingleUser);
 router.patch("/:id", auth(UserRole.ADMIN, UserRole.SELLER), fileUploader.upload.single("profile_images"), parseData, userController.updateUser);
 router.delete("/:id", auth(UserRole.ADMIN), userController.deleteUser);

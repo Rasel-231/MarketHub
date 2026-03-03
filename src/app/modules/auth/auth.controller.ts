@@ -24,6 +24,24 @@ const login = catchAsync(async (req: Request, res: Response) => {
     });
 
 })
+const logout = catchAsync(async (req: Request, res: Response) => {
+    const cookieOptions = {
+        secure: true,
+        httpOnly: true,
+        sameSite: 'none' as const,
+    };
+
+
+    res.cookie("accessToken", "", { ...cookieOptions, maxAge: 0, });
+    res.cookie("refreshToken", "", { ...cookieOptions, maxAge: 0, });
+    res.status(200).json({
+        success: true,
+        message: "User logged out successfully",
+        data: null
+    });
+});
+
 export const authController = {
-    login
-}
+    login,
+    logout
+};

@@ -17,17 +17,27 @@ const addProductToCart = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 });
+const updateQuantity = catchAsync(async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const { quantity } = req.body;
 
-const updateCartItemQuantity = catchAsync(async (req: Request, res: Response) => {
-    const { productId, quantity } = req.body;
-    const userId = req.user?.id;
-
-    const result = await cartService.updateQuantity(userId);
+    const result = await cartService.updateQuantity(id, quantity);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Cart updated successfully",
+        message: "Quantity updated",
+        data: result,
+    });
+});
+const deleteCartItem = catchAsync(async (req: Request, res: Response) => {
+    const cartId = req.params.id as string;
+    const result = await cartService.deleteCartItem(cartId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Cart deleted successfully",
         data: result,
     });
 });
@@ -44,6 +54,7 @@ const getCart = catchAsync(async (req: Request, res: Response) => {
 })
 export const cartController = {
     addProductToCart,
-    updateCartItemQuantity,
-    getCart
+    updateQuantity,
+    getCart,
+    deleteCartItem
 };

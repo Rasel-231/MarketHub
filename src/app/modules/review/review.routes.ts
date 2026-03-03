@@ -11,5 +11,6 @@ router.post(
     auth(UserRole.BUYER, UserRole.SELLER, UserRole.ADMIN),
     reviewController.createReview
 );
+router.get('/:productId', reviewController.getAllReviews);
 
 export const reviewRoutes = router;

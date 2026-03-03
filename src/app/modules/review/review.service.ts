@@ -1,39 +1,47 @@
 import { OrderStatus, Review, UserRole } from "@prisma/client";
 import { IReview } from "./review.interface";
 import { prisma } from "../../shared/prisma";
-import httpStatus from "http-status"
+import httpStatus from 'http-status';
 import ApiError from "../../shared/ApiError";
 
-const createReview = async (userId: string, payload: IReview): Promise<Review> => {
-    const isDelivered = await prisma.order.findFirst({
-        where: {
-            userId,
-            status: OrderStatus.DELIVERED,
-            orderItems: {
-                some: {
-                    productId: payload.productId
-                }
-            }
-        }
+const createReview = async (userId: string | undefined, payload: IReview): Promise<Review> => {
 
 
-    })
-    if (!isDelivered) {
-        throw new ApiError("You can only review products that have been delivered to you", httpStatus.BAD_REQUEST,
-        );
+    if (!payload) {
+        throw new ApiError("Payload is missing!", httpStatus.BAD_REQUEST,);
     }
-
     const result = await prisma.review.create({
         data: {
-            userId,
-            productId: payload.productId,
             rating: payload.rating,
-            comment: payload.comment
+            comment: payload.comment,
+            productId: payload.productId,
+            userId: userId || null,
+        }
+    });
+    return result;
+};
+
+const getAllReviews = async (productId: string): Promise<Review[]> => {
+    const result = await prisma.review.findMany({
+        where: {
+            productId: productId
+        },
+        include: {
+            user: {
+
+                include: {
+                    seller: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
         }
     })
     return result;
-}
+};
 
 export const reviewService = {
-    createReview
+    createReview,
+    getAllReviews
 };

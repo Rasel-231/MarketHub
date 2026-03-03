@@ -1,44 +1,49 @@
 model User {
-  id             String      @id @default(uuid())
-  name           String
-  email          String      @unique
-  password       String
-  contactNumber  String
-  role           UserRole    @default(BUYER)
-  status         UserStatus  @default(ACTIVE)
-  seller         Seller?
-  admin          Admin?
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  contactNumber String
+  role          UserRole       @default(BUYER)
+  status        UserStatus     @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  admin         Admin?
+  aIChatSession AIChatSession?
+  billing       Billing?
+  cart          Cart?
+  orders        Order[]
+  address       String?
+  payment       Payment[]
   products      Products[]
-  orders         Order[]
-  payment       Payment []
-  aIChatSession  AIChatSession[]
-  cart           Cart? 
-  review        Review[] 
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  review        Review[]
+  seller        Seller?
+  wishlist      Wishlist[]
+
   @@map("users")
 }
 
-
 model Seller {
-  id            String       @id @default(uuid())
-  userId        String       @unique
-  user          User         @relation(fields: [userId], references: [id])
-  shopName      String?
-  shopSlug      String?       @unique
-  profilePhoto  String?
-  products      Products[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id           String     @id @default(uuid())
+  profilePhoto String?
+  userId       String     @unique
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  shopName     String?
+  shopSlug     String?    @unique
+  products     Products[]
+  user         User       @relation(fields: [userId], references: [id])
+
   @@map("sellers")
 }
+
 model Admin {
-  id            String  @id @default(uuid())
-  userId        String  @unique
-  user          User    @relation(fields: [userId], references: [id])
-  profilePhoto  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(uuid())
+  profilePhoto String?
+  userId       String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+
   @@map("admins")
 }
-
