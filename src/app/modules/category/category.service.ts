@@ -42,7 +42,7 @@ const getAllCategorys = async (options: any, params: any) => {
         })
     }
 
-    //pagination and sorting can be added here
+
     const { limit, skip, sortBy, sortOrder } = paginationHelpers.calculatePagination(options)
     const whereConditions: Prisma.CategoryWhereInput = andConditions.length ? { AND: andConditions } : {};
     const categorys = await prisma.category.findMany({
@@ -99,7 +99,35 @@ const deleteCategory = async (categoryId: string) => {
     });
     return deletedcategory;
 }
+const deleteCategoryParmanently = async (categoryId: string) => {
+    return await prisma.$transaction(async (tx) => {
+        const category = await tx.category.findUnique({
+            where: { id: categoryId },
+            include: {
+                products: true,
+                attributes: true
+            }
+        });
 
+        if (!category) {
+            throw new Error("Category not found");
+        }
+
+        if (category.products && category.products.length > 0) {
+            throw new Error("Cannot delete category. There are products associated with it.");
+        }
+
+        await tx.categoryAttribute.deleteMany({
+            where: { categoryId: categoryId }
+        });
+
+        const deletedCategory = await tx.category.delete({
+            where: { id: categoryId },
+        });
+
+        return deletedCategory;
+    });
+};
 
 export const categoryService = {
     createCategory,
@@ -107,5 +135,6 @@ export const categoryService = {
     getSingleCategory,
     updateCategory,
     deleteCategory,
+    deleteCategoryParmanently
 
 };

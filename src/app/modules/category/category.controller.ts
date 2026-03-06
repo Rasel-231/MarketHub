@@ -59,6 +59,16 @@ const deleteCategory = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 })
+const deleteCategoryParmanently = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await categoryService.deleteCategoryParmanently(id as string);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "category deleted parmanently",
+        data: result,
+    });
+})
 
 export const categoryController = {
     createCategory,
@@ -66,5 +76,6 @@ export const categoryController = {
     getSingleCategory,
     updateCategory,
     deleteCategory,
+    deleteCategoryParmanently
 
 }

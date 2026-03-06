@@ -46,17 +46,3 @@ enum CategoryStatus {
   INACTIVE
 }
 
-enum Size {
-  sm
-  m
-  xl
-  xxl
-}
-
-enum Colour {
-  red
-  blue
-  green
-  yellow
-  cyan
-}

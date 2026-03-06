@@ -13,7 +13,6 @@ export const auth = (...roles: string[]) => {
             const verifyUser = jwtHelpers.verifyToken(token);
 
             req.user = verifyUser;
-            console.log("VerifiedUser", verifyUser);
             if (roles.length && !roles.includes(verifyUser.role)) {
                 throw new ApiError("You are not Authorized to access this route", 401);
             } next();

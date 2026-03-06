@@ -12,6 +12,7 @@ import { paymentRoutes } from '../modules/payment/payemtn.routes';
 import { contactRoutes } from '../modules/contact/contact.routes';
 import { wishlistRoutes } from '../modules/wishlist/wishlist.routes';
 import { flagRoutes } from '../modules/productFlag/flag.routes';
+import { attributesRoutes } from '../modules/attribute/attributes.routes';
 
 
 
@@ -50,6 +51,10 @@ const moduleRoutes = [
     {
         path: '/flag',
         route: flagRoutes
+    },
+    {
+        path: '/attribute',
+        route: attributesRoutes
     },
     {
         path: '/admin',

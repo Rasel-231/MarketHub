@@ -7,15 +7,7 @@ import { productFilterableFields } from "./products.constant";
 import httpStatus from "http-status";
 
 
-const createAttribute = catchAsync(async (req: Request, res: Response) => {
-    const result = await productsService.createAttribute(req);
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Attribute created successfully",
-        data: result,
-    });
-})
+
 
 const createProduct = catchAsync(async (req: Request, res: Response) => {
     const result = await productsService.createProducts(req);
@@ -36,16 +28,6 @@ const getAllProducts = catchAsync(async (req: Request, res: Response) => {
         statusCode: httpStatus.OK,
         success: true,
         message: "Products retrieved successfully",
-        data: result,
-    });
-})
-const getAttributeByCategory = catchAsync(async (req: Request, res: Response) => {
-
-    const result = await productsService.getAttributesByCategory(req.body);
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Attribute retrieved successfully",
         data: result,
     });
 })
@@ -81,8 +63,6 @@ const deleteProduct = catchAsync(async (req: Request, res: Response) => {
 })
 
 export const productController = {
-    createAttribute,
-    getAttributeByCategory,
     createProduct,
     getAllProducts,
     getSingleProducts,

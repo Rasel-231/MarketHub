@@ -33,7 +33,7 @@ const checkout = async (userId: string, payload: { deliveryAddress: string, paym
         }
 
         const totalAmount = existingCart.items.reduce(
-            (acc, item) => acc + (item.quantity * item.sellingPrice), 0
+            (acc, item) => acc + (item.quantity * (item.flashSalePrice ?? 0)), 0
         );
 
 
@@ -45,9 +45,11 @@ const checkout = async (userId: string, payload: { deliveryAddress: string, paym
                 status: OrderStatus.PENDING,
                 orderItems: {
                     create: existingCart.items.map(item => ({
-                        productId: item.productId,
                         quantity: item.quantity,
-                        unitPrice: item.sellingPrice
+                        unitPrice: item.flashSalePrice ?? 0,
+                        product: {
+                            connect: { id: item.productId }
+                        }
                     }))
                 }
             }

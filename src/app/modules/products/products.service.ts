@@ -1,5 +1,5 @@
 
-import { Prisma, Products, ProductStatus, User } from "@prisma/client";
+import { CategoryAttribute, Prisma, Products, ProductStatus, User } from "@prisma/client";
 import { prisma } from "../../shared/prisma";
 import { productSearchableFields } from "./products.constant";
 import { paginationHelpers } from "../../helpers/paginationHelpers";
@@ -11,18 +11,8 @@ import httpStatus from 'http-status';
 
 
 
-const createAttribute = async (data: any) => {
-    return await prisma.categoryAttribute.create({
-        data
-    });
-};
 
-const getAttributesByCategory = async (categoryId: string) => {
-    return await prisma.categoryAttribute.findMany({
-        where: { categoryId },
-        orderBy: { groupName: 'asc' }
-    });
-};
+
 
 
 const createProducts = async (req: Request): Promise<Products & { sellingPrice: number; discountAmount: number }> => {
@@ -44,6 +34,8 @@ const createProducts = async (req: Request): Promise<Products & { sellingPrice: 
         where: { categoryId: payload.categoryId }
     });
 
+    const attributes = payload.attributes || {};
+
     const productActualPrice = Number(payload.productActualPrice);
     const discountedRate = Number(payload.discountedRate);
     const { sellingPrice, discountAmount } = calculateDiscount(productActualPrice, discountedRate);
@@ -52,14 +44,12 @@ const createProducts = async (req: Request): Promise<Products & { sellingPrice: 
             title: payload.title,
             description: payload.description,
             brand: payload.brand,
-            colour: payload.colour || [],
-            size: payload.size || [],
             status: payload.status || "AVAILABLE",
             images: product_image,
             productActualPrice,
             discountedRate,
             stock: Number(payload.stock) || 0,
-            specifications: payload.specifications || {},
+            specifications: attributes,
             category: { connect: { id: payload.categoryId } },
             seller: { connect: { id: payload.sellerId } },
             user: { connect: { id: payload.userId } },
@@ -73,56 +63,126 @@ const createProducts = async (req: Request): Promise<Products & { sellingPrice: 
     };
 };
 const getAllProducts = async (options: any, params: any) => {
-    const { searchTerm, minPrice, maxPrice, ...filtersData } = params;
+    const {
+        searchTerm,
+        minPrice,
+        maxPrice,
+        category,
+        brand,
+        status,
+        isFeatured,
+        rating,
+        color,
+        size,
+        ...filtersData
+    } = params;
+
     const andConditions: any[] = [];
+
+
     if (searchTerm) {
         andConditions.push({
-            OR: productSearchableFields.map(field => ({
-                [field]: { contains: searchTerm, mode: "insensitive" }
-            }))
+            OR: [
+                { title: { contains: searchTerm, mode: "insensitive" } },
+                { description: { contains: searchTerm, mode: "insensitive" } },
+                { brand: { contains: searchTerm, mode: "insensitive" } }
+            ]
         });
     }
-    if (Object.keys(filtersData).length) {
+
+
+    if (rating) {
         andConditions.push({
-            AND: Object.entries(filtersData).map(([key, value]) => ({
-                [key]: { equals: value }
-            }))
+            review: {
+                some: {
+                    rating: Number(rating)
+                }
+            }
+        });
+    }
+
+    if (color) {
+        andConditions.push({
+            specification: {
+                contains: color,
+                mode: "insensitive"
+            }
+        });
+    }
+
+    if (size) {
+        andConditions.push({
+            specification: {
+                contains: size,
+                mode: "insensitive"
+            }
+        });
+    }
+
+
+    if (category) andConditions.push({ categoryId: category });
+    if (brand) andConditions.push({ brand: { equals: brand, mode: "insensitive" } });
+    if (status) andConditions.push({ status: status });
+    if (isFeatured !== undefined) andConditions.push({ isFeatured: isFeatured === 'true' });
+
+
+    if (minPrice || maxPrice) {
+        andConditions.push({
+            productActualPrice: {
+                ...(minPrice && { gte: Number(minPrice) }),
+                ...(maxPrice && { lte: Number(maxPrice) }),
+            }
+        });
+    }
+
+    if (Object.keys(filtersData).length > 0) {
+        Object.keys(filtersData).forEach((key) => {
+            andConditions.push({
+                [key]: (filtersData as any)[key]
+            });
         });
     }
 
     const { limit, skip, sortBy, sortOrder } = paginationHelpers.calculatePagination(options);
     const whereConditions: any = andConditions.length ? { AND: andConditions } : {};
-    const products = await prisma.products.findMany({
-        skip,
-        take: limit,
-        where: whereConditions,
-        include: { review: true },
-        orderBy:
-            sortBy && sortOrder
-                ? { [sortBy]: sortOrder }
-                : { createdAt: "desc" },
-    });
+
+
+    const [products, total] = await Promise.all([
+        prisma.products.findMany({
+            where: whereConditions,
+            skip,
+            take: limit,
+            include: {
+                review: true,
+                category: true,
+                seller: { select: { shopName: true } }
+            },
+            orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: "desc" },
+        }),
+        prisma.products.count({ where: whereConditions })
+    ]);
+
 
     const mappedProducts = products.map(product => {
-        const { sellingPrice, discountAmount } = calculateDiscount(product.productActualPrice, product.discountedRate);
-        return { ...product, sellingPrice, discountAmount };
-    });
+        const { discountAmount, sellingPrice } = calculateDiscount(
+            product.productActualPrice,
+            product.discountedRate
+        );
 
-    const filteredProducts = mappedProducts.filter(product => {
-        if (minPrice && product.sellingPrice < Number(minPrice)) return false;
-        if (maxPrice && product.sellingPrice > Number(maxPrice)) return false;
-        return true;
+        return {
+            ...product,
+            sellingPrice,
+            discountAmount
+        };
     });
-
-    const total = filteredProducts.length;
 
     return {
         meta: {
-            page: options.page || 1,
+            page: Number(options.page) || 1,
             limit,
             total
         },
-        data: filteredProducts
+        data: mappedProducts
     };
 };
 const getSingleProducts = async (productId: string) => {
@@ -267,8 +327,6 @@ const searchProductsForChatbot = async (query: any) => {
 };
 
 export const productsService = {
-    createAttribute,
-    getAttributesByCategory,
     createProducts,
     getAllProducts,
     getSingleProducts,
