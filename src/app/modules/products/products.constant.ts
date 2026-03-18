@@ -1,3 +1,3 @@
-export const productFilterableFields = ['searchTerm', 'brand', 'categoryId', 'minPrice', 'maxPrice', 'status'];
+export const productFilterableFields = ['searchTerm', 'brand', 'category', 'minPrice', 'maxPrice', 'status', 'rating'];
 
 export const productSearchableFields = ['title', 'brand', 'description',]

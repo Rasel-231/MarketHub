@@ -18,9 +18,7 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
     });
 })
 const getAllCategory = catchAsync(async (req: Request, res: Response) => {
-    const options = pick(req.query, categorySearchableFields);
-    const filters = pick(req.query, categoryFilterableFields);
-    const result = await categoryService.getAllCategorys(options, filters);
+    const result = await categoryService.getAllCategories();
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,

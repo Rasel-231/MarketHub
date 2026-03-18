@@ -20,60 +20,12 @@ const createCategory = async (payload: any) => {
     });
     return result;
 }
-const getAllCategorys = async (options: any, params: any) => {
-    const { searchTerm, ...filtersData } = params;
-    const andConditions: Prisma.CategoryWhereInput[] = [];
-
-    //search term
-    if (searchTerm) {
-        andConditions.push({
-            OR: categorySearchableFields.map(field => ({
-                [field]: { contains: searchTerm, mode: "insensitive" }
-            }))
-        })
-    }
-
-    //filters Data
-    if (Object.keys(filtersData).length) {
-        andConditions.push({
-            AND: Object.entries(filtersData).map(([key, value]) => ({
-                [key]: { equals: value }
-            }))
-        })
-    }
-
-
-    const { limit, skip, sortBy, sortOrder } = paginationHelpers.calculatePagination(options)
-    const whereConditions: Prisma.CategoryWhereInput = andConditions.length ? { AND: andConditions } : {};
-    const categorys = await prisma.category.findMany({
-        skip,
-        take: limit,
-        where: whereConditions,
-        include: {
-            _count: {
-                select: { products: true },
-            },
-            attributes: true,
-        },
-
-        orderBy:
-            sortBy && sortOrder
-                ? { [sortBy]: sortOrder }
-                : { createdAt: "desc" },
-    })
-
-    const total = await prisma.category.count({
-        where: whereConditions
-    });
+const getAllCategories = async () => {
+    const categories = await prisma.category.findMany();
     return {
-        meta: {
-            page: options.page || 1,
-            limit,
-            total
-        },
-        data: categorys
-    }
-}
+        data: categories,
+    };
+};
 
 const getSingleCategory = async (categoryId: string): Promise<Category | null> => {
     const category = await prisma.category.findUnique({
@@ -131,7 +83,7 @@ const deleteCategoryParmanently = async (categoryId: string) => {
 
 export const categoryService = {
     createCategory,
-    getAllCategorys,
+    getAllCategories,
     getSingleCategory,
     updateCategory,
     deleteCategory,

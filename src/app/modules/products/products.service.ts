@@ -69,16 +69,11 @@ const getAllProducts = async (options: any, params: any) => {
         maxPrice,
         category,
         brand,
-        status,
-        isFeatured,
         rating,
-        color,
-        size,
         ...filtersData
     } = params;
 
     const andConditions: any[] = [];
-
 
     if (searchTerm) {
         andConditions.push({
@@ -90,41 +85,29 @@ const getAllProducts = async (options: any, params: any) => {
         });
     }
 
-
     if (rating) {
         andConditions.push({
             review: {
                 some: {
-                    rating: Number(rating)
+                    rating: { gte: Number(rating) }
                 }
             }
         });
     }
 
-    if (color) {
+    if (category) {
         andConditions.push({
-            specification: {
-                contains: color,
-                mode: "insensitive"
+            category: {
+                name: {
+                    equals: category,
+                    mode: "insensitive"
+                }
             }
         });
     }
-
-    if (size) {
-        andConditions.push({
-            specification: {
-                contains: size,
-                mode: "insensitive"
-            }
-        });
+    if (brand) {
+        andConditions.push({ brand: { equals: brand, mode: "insensitive" } });
     }
-
-
-    if (category) andConditions.push({ categoryId: category });
-    if (brand) andConditions.push({ brand: { equals: brand, mode: "insensitive" } });
-    if (status) andConditions.push({ status: status });
-    if (isFeatured !== undefined) andConditions.push({ isFeatured: isFeatured === 'true' });
-
 
     if (minPrice || maxPrice) {
         andConditions.push({
@@ -144,27 +127,25 @@ const getAllProducts = async (options: any, params: any) => {
     }
 
     const { limit, skip, sortBy, sortOrder } = paginationHelpers.calculatePagination(options);
-    const whereConditions: any = andConditions.length ? { AND: andConditions } : {};
+    const whereConditions: any = andConditions.length > 0 ? { AND: andConditions } : {};
 
-
-    const [products, total] = await Promise.all([
-        prisma.products.findMany({
+    const [products, total] = await (prisma as any).$transaction([
+        (prisma as any).products.findMany({
             where: whereConditions,
             skip,
             take: limit,
             include: {
-                review: true,
+                // review: true,
                 category: true,
                 seller: { select: { shopName: true } }
             },
             orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: "desc" },
         }),
-        prisma.products.count({ where: whereConditions })
+        (prisma as any).products.count({ where: whereConditions })
     ]);
 
-
-    const mappedProducts = products.map(product => {
-        const { discountAmount, sellingPrice } = calculateDiscount(
+    const mappedProducts = products.map((product: any) => {
+        const { discountAmount, sellingPrice } = (calculateDiscount as any)(
             product.productActualPrice,
             product.discountedRate
         );
