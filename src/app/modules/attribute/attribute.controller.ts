@@ -13,6 +13,16 @@ const createAttribute = catchAsync(async (req: Request, res: Response) => {
         data: result,
     });
 })
+const updateAttribute = catchAsync(async (req: Request, res: Response) => {
+    const id = req.params.id as string
+    const result = await attributeService.updateAttributeValue(req.body, id);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Attribute update successfully",
+        data: result,
+    });
+})
 const getAttributeByCategory = catchAsync(async (req: Request, res: Response) => {
     const { categoryId } = req.params;
     const result = await attributeService.getAttributesByCategory(categoryId as string);
@@ -25,5 +35,6 @@ const getAttributeByCategory = catchAsync(async (req: Request, res: Response) =>
 })
 export const attributeController = {
     createAttribute,
-    getAttributeByCategory
+    getAttributeByCategory,
+    updateAttribute
 }

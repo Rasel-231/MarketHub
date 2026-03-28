@@ -4,34 +4,48 @@ import ApiError from '../../shared/ApiError';
 import httpStatus from "http-status";
 import { prisma } from '../../shared/prisma';
 import { ProductStatus } from '@prisma/client';
-
+import { calculateDiscount } from '../calculateFn';
 const chatWithAi = async (payload: { prompt: string; userId?: string }) => {
 
-    console.log("UserId", payload.userId);
     if (!payload?.prompt) {
         throw new ApiError("Prompt is required", httpStatus.BAD_REQUEST);
     }
 
-    // 1. Fetch User details for personalization
     let userName = "Guest";
     if (payload.userId) {
         const user = await prisma.user.findUnique({ where: { id: payload.userId } });
-        if (user) userName = user.name || user.name || "Boss";
+        if (user) userName = user.name || "Boss";
     }
 
-    // 2. Fetch Available Products
     const products = await prisma.products.findMany({
         where: { status: ProductStatus.AVAILABLE },
         select: {
             title: true,
-            price: true,
-            description: true,
+            productActualPrice: true,
+            discountedRate: true,
             brand: true,
             category: { select: { name: true } }
-        }
+        },
+        take: 15
     });
 
-    // 3. Direct API Call to OpenRouter
+
+    const mappedProducts = products.map((product: any) => {
+        const { sellingPrice } = (calculateDiscount as any)(
+            product.productActualPrice,
+            product.discountedRate
+        );
+
+        return {
+            title: product.title,
+            brand: product.brand,
+            category: product.category?.name,
+            originalPrice: product.productActualPrice,
+            discount: `${product.discountedRate}%`,
+            sellingPrice: sellingPrice
+        };
+    });
+
     try {
         const response = await axios.post(
             "https://openrouter.ai/api/v1/chat/completions",
@@ -40,11 +54,11 @@ const chatWithAi = async (payload: { prompt: string; userId?: string }) => {
                 messages: [
                     {
                         role: "system",
-                        content: `You are a helpful shopping assistant for our e-commerce store. 
+                        content: `You are a helpful shopping assistant for MarketHub. 
                         The user's name is ${userName}.
-                        Here is our catalog: ${JSON.stringify(products)}.
-                        If the user is logged in (name is not Guest), greet them by name.
-                        Help them find products, compare prices, and be very polite.`
+                        Available Products: ${JSON.stringify(mappedProducts)}.
+                        Always mention the 'sellingPrice' when discussing costs.
+                        Be polite and help the user find the best deals.`
                     },
                     { role: "user", content: payload.prompt }
                 ],

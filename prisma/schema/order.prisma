@@ -6,7 +6,10 @@ model Order {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   userId          String
+  riderName       String?
+  riderPhone      String?
   orderItems      OrderItem[]
+  orderTimeline   OrderTimeline[]
   user            User        @relation(fields: [userId], references: [id])
   payment         Payment?
 
@@ -25,4 +28,15 @@ model OrderItem {
   product   Products @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+model OrderTimeline {
+  id        String      @id @default(uuid())
+  orderId   String
+  status    OrderStatus
+  details   String?
+  createdAt DateTime    @default(now())
+  order     Order       @relation(fields: [orderId], references: [id])
+
+  @@map("order_timelines")
 }

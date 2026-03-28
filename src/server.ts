@@ -1,45 +1,35 @@
 import { Server } from 'http';
-import app from './app';
+import { server as httpServer } from './app';
 import config from './config';
 import startOrderCleanupCron from './app/modules/order/order.cron';
 
-
 async function bootstrap() {
-    // This variable will hold our server instance
     let server: Server;
 
     try {
-        // Start the server
-        server = app.listen(config.port, () => {
+        server = httpServer.listen(config.port, () => {
             startOrderCleanupCron();
         });
 
-        // Function to gracefully shut down the server
         const exitHandler = () => {
             if (server) {
                 server.close(() => {
-
-                    process.exit(1); // Exit with a failure code
+                    process.exit(1);
                 });
             } else {
                 process.exit(1);
             }
         };
 
-        // Handle unhandled promise rejections
-        process.on('unhandledRejection', (error) => {
-
-            if (server) {
-                server.close(() => {
-
-                    process.exit(1);
-                });
-            } else {
-                process.exit(1);
-            }
+        process.on('uncaughtException', () => {
+            exitHandler();
         });
+
+        process.on('unhandledRejection', () => {
+            exitHandler();
+        });
+
     } catch (error) {
-        console.error('Error during server startup:', error);
         process.exit(1);
     }
 }

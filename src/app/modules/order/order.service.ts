@@ -4,6 +4,7 @@ import { prisma } from "../../shared/prisma";
 import httpStatus from "http-status";
 import { v4 as uuidv4 } from 'uuid';
 import { paymentService } from "../payment/payment.service";
+import { io } from "../../../app";
 
 const checkout = async (userId: string, payload: { deliveryAddress: string, paymentMethod: PaymentMethod }) => {
     const result = await prisma.$transaction(async (tx) => {
@@ -102,7 +103,6 @@ const checkout = async (userId: string, payload: { deliveryAddress: string, paym
         orderId: result.orderId
     };
 };
-
 const getMyOrders = async (userId: string) => {
     return await prisma.order.findMany({
         where: { userId },
@@ -110,14 +110,18 @@ const getMyOrders = async (userId: string) => {
             orderItems: {
                 include: { product: true }
             },
+            user: {
+                select: { name: true }
+            },
+            orderTimeline: {
+                orderBy: { createdAt: 'asc' }
+            },
             payment: true
         },
 
         orderBy: { createdAt: 'desc' }
     });
 };
-
-
 const getSingleOrder = async (orderId: string, userId: string) => {
     return await prisma.order.findFirstOrThrow({
         where: {
@@ -128,11 +132,16 @@ const getSingleOrder = async (orderId: string, userId: string) => {
             orderItems: {
                 include: { product: true }
             },
+            user: {
+                select: { name: true }
+            },
+            orderTimeline: {
+                orderBy: { createdAt: 'asc' }
+            },
             payment: true
         }
     });
 };
-
 const cancelOrder = async (userId: string, orderId: string): Promise<void> => {
     await prisma.$transaction(async (tr) => {
         const existingOrder = await tr.order.findUnique({
@@ -169,10 +178,71 @@ const cancelOrder = async (userId: string, orderId: string): Promise<void> => {
         }
     });
 };
+const updateOrderStatus = async (orderId: string, userId: string, payload: any) => {
+    const { status, details, riderName, riderPhone } = payload;
+
+    if (!userId) {
+        throw new ApiError("User ID is required", httpStatus.UNAUTHORIZED);
+    }
+
+
+    const result = await prisma.$transaction(async (tx) => {
+        const isOrderExist = await tx.order.findUnique({
+            where: { id: orderId }
+        });
+
+        if (!isOrderExist) {
+            throw new ApiError("Order not found", httpStatus.NOT_FOUND);
+        }
+
+        // অর্ডার আপডেট করা
+        const updatedOrder = await tx.order.update({
+            where: { id: orderId },
+            data: {
+                status,
+
+                ...(riderName && { riderName }),
+                ...(riderPhone && { riderPhone }),
+            },
+            include: {
+                orderTimeline: true
+            },
+        });
+
+
+        await tx.orderTimeline.create({
+            data: {
+                orderId,
+                status,
+                details: details || `Order status has been updated to ${status}`
+            }
+        });
+
+        return updatedOrder;
+    });
+
+    if (result) {
+        io.to(`order_${orderId}`).emit('status_update', {
+            status: result.status,
+            order: result,
+            message: details || `Status updated to ${status}`,
+            rider: {
+                name: result.riderName,
+                phone: result.riderPhone
+            },
+            updatedAt: result.updatedAt
+        });
+
+        console.log(`📡 Socket emitted: status_update for order_${orderId}`);
+    }
+
+    return result;
+};
 
 export const orderService = {
     checkout,
     getMyOrders,
     getSingleOrder,
     cancelOrder,
+    updateOrderStatus
 };

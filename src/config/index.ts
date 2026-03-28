@@ -14,6 +14,9 @@ export default {
     cloud_name: process.env.CLOUD_NAME,
     salt_round: process.env.SALT_ROUND,
     ai_api_key: process.env.AI_API_KEY,
+    support_email: process.env.SUPPORT_EMAIL,
+    app_password: process.env.APP_PASSWORD,
+    redis_url: process.env.REDIS_URL,
     jwt: {
         jwt_secret: process.env.JWT_SECRET as string,
         jwt_expires_in: process.env.JWT_EXPIRES_IN as string,
@@ -23,4 +26,5 @@ export default {
         store_id: process.env.store_id,
         store_password: process.env.store_password,
     }
+
 }

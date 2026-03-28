@@ -23,9 +23,19 @@ const getAttributesByCategory = async (categoryId: string) => {
     });
 };
 
+const updateAttributeValue = async (productId: string, specs: any) => {
+    return await prisma.products.update({
+        where: { id: productId },
+        data: {
+            specifications: specs
+        }
+    });
+};
+
 
 
 export const attributeService = {
     createAttribute,
-    getAttributesByCategory
+    getAttributesByCategory,
+    updateAttributeValue
 };

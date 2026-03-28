@@ -7,7 +7,7 @@ router.get("/", productController.getAllProducts);
 router.post("/create", fileUploader.upload.single("products_image"), productController.createProduct);
 router.get("/:id", productController.getSingleProducts);
 router.delete("/:id", productController.deleteProduct);
-router.patch("/:id", fileUploader.upload.single("products_image"), productController.updateProduct);
+router.patch("/update/:id", fileUploader.upload.single("products_image"), productController.updateProduct);
 
 
 export const productsRoutes = router;

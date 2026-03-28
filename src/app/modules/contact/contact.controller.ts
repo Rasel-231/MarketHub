@@ -22,12 +22,23 @@ const createContact = catchAsync(async (req: Request, res: Response): Promise<vo
     });
 });
 
+
 const getAllContactMessages = catchAsync(async (req: Request, res: Response): Promise<void> => {
     const result = await contactService.getAllMessages();
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: "All Messages retrieved successfully!",
+        data: result
+    });
+});
+
+const supportReply = catchAsync(async (req: Request, res: Response): Promise<void> => {
+    const result = await contactService.supportReply(req.body);
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Message sent successfully!",
         data: result
     });
 });
@@ -54,10 +65,12 @@ const deleteContactMessage = catchAsync(async (req: Request, res: Response): Pro
     });
 });
 
+
 export const contactController = {
     createContact,
     getAllContactMessages,
     getSingleContactMessage,
-    deleteContactMessage
+    deleteContactMessage,
+    supportReply,
 
 };

@@ -4,6 +4,7 @@ model Message {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   contactNumber String
+  isSupport     Boolean  @default(false)
   email         String
   name          String
 

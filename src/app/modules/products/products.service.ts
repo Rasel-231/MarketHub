@@ -135,7 +135,7 @@ const getAllProducts = async (options: any, params: any) => {
             skip,
             take: limit,
             include: {
-                // review: true,
+                review: true,
                 category: true,
                 seller: { select: { shopName: true } }
             },
@@ -306,6 +306,7 @@ const searchProductsForChatbot = async (query: any) => {
 
     return formatted;
 };
+
 
 export const productsService = {
     createProducts,

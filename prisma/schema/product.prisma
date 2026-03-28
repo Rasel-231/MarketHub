@@ -13,7 +13,7 @@ model Products {
   flashSaleStart     DateTime?
   flashSaleEnd       DateTime?
   categoryId         String
-  specifications     Json?          @default("{}")
+  specifications     Json?          @default("[]")
   category           Category      @relation(fields: [categoryId], references: [id])
   sellerId           String
   seller             Seller        @relation(fields: [sellerId], references: [id]) 
