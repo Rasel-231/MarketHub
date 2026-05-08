@@ -13,6 +13,7 @@ import { contactRoutes } from '../modules/contact/contact.routes';
 import { wishlistRoutes } from '../modules/wishlist/wishlist.routes';
 import { flagRoutes } from '../modules/productFlag/flag.routes';
 import { attributesRoutes } from '../modules/attribute/attributes.routes';
+import { bannerRoutes } from '../modules/bannerAdd/banner.routes';
 
 
 
@@ -47,6 +48,10 @@ const moduleRoutes = [
     {
         path: '/products',
         route: productsRoutes
+    },
+    {
+        path: '/banner',
+        route: bannerRoutes,
     },
     {
         path: '/flag',

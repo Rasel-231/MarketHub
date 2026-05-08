@@ -15,53 +15,64 @@ import httpStatus from 'http-status';
 
 
 
-const createProducts = async (req: Request): Promise<Products & { sellingPrice: number; discountAmount: number }> => {
-    const payload = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+// const createProducts = async (req: Request): Promise<Products & { sellingPrice: number; discountAmount: number }> => {
 
-    let product_image: string[] = [];
-    if (req.file) {
-        const uploadedResult = await fileUploader.uploadToCloudinary(req.file);
-        if (uploadedResult?.secure_url) {
-            product_image = [uploadedResult.secure_url];
-        }
-    }
+//     const payload = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
 
-    if (!payload.categoryId) {
-        throw new ApiError("Category ID is required", httpStatus.NOT_FOUND);
-    }
 
-    await prisma.categoryAttribute.findMany({
-        where: { categoryId: payload.categoryId }
-    });
+//     let product_images: string[] = [];
+//     const files = req.files as Express.Multer.File[];
 
-    const attributes = payload.attributes || {};
+//     if (files && files.length > 0) {
 
-    const productActualPrice = Number(payload.productActualPrice);
-    const discountedRate = Number(payload.discountedRate);
-    const { sellingPrice, discountAmount } = calculateDiscount(productActualPrice, discountedRate);
-    const product: Products = await prisma.products.create({
-        data: {
-            title: payload.title,
-            description: payload.description,
-            brand: payload.brand,
-            status: payload.status || "AVAILABLE",
-            images: product_image,
-            productActualPrice,
-            discountedRate,
-            stock: Number(payload.stock) || 0,
-            specifications: attributes,
-            category: { connect: { id: payload.categoryId } },
-            seller: { connect: { id: payload.sellerId } },
-            user: { connect: { id: payload.userId } },
-        },
-    });
+//         const uploadPromises = files.map((file) => fileUploader.uploadToCloudinary(file));
+//         const uploadResults = await Promise.all(uploadPromises);
 
-    return {
-        ...product,
-        sellingPrice,
-        discountAmount,
-    };
-};
+
+//         product_images = uploadResults
+//             .filter((result) => result !== undefined)
+//             .map((result) => result!.secure_url);
+//     }
+
+
+//     if (!payload.categoryId) {
+//         throw new ApiError("Category ID is required", httpStatus.NOT_FOUND,);
+//     }
+
+
+
+//     const attributes = payload.attributes || {};
+
+
+//     const productActualPrice = Number(payload.productActualPrice) || 0;
+//     const discountedRate = Number(payload.discountedRate) || 0;
+
+//     const { sellingPrice, discountAmount } = calculateDiscount(productActualPrice, discountedRate);
+
+
+//     const product: Products = await prisma.products.create({
+//         data: {
+//             title: payload.title,
+//             description: payload.description,
+//             brand: payload.brand,
+//             status: payload.status || "AVAILABLE",
+//             images: product_images,
+//             productActualPrice,
+//             discountedRate,
+//             stock: Number(payload.stock) || 0,
+//             specifications: attributes,
+//             category: { connect: { id: payload.categoryId } },
+//             seller: { connect: { id: payload.sellerId } },
+//             user: { connect: { id: payload.userId } },
+//         },
+//     });
+
+//     return {
+//         ...product,
+//         sellingPrice,
+//         discountAmount,
+//     };
+// };
 const getAllProducts = async (options: any, params: any) => {
     const {
         searchTerm,
@@ -108,6 +119,9 @@ const getAllProducts = async (options: any, params: any) => {
     if (brand) {
         andConditions.push({ brand: { equals: brand, mode: "insensitive" } });
     }
+    if (!filtersData.status) {
+        andConditions.push({ status: "AVAILABLE" });
+    }
 
     if (minPrice || maxPrice) {
         andConditions.push({
@@ -137,6 +151,7 @@ const getAllProducts = async (options: any, params: any) => {
             include: {
                 review: true,
                 category: true,
+
                 seller: { select: { shopName: true } }
             },
             orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: "desc" },
@@ -166,6 +181,60 @@ const getAllProducts = async (options: any, params: any) => {
         data: mappedProducts
     };
 };
+const createProducts = async (req: Request): Promise<Products & { sellingPrice: number; discountAmount: number }> => {
+    const payload = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
+
+    let product_images: string[] = [];
+    const files = req.files as Express.Multer.File[];
+
+    if (files && files.length > 0) {
+        const uploadPromises = files.map((file) => fileUploader.uploadToCloudinary(file));
+        const uploadResults = await Promise.all(uploadPromises);
+
+        product_images = uploadResults
+            .filter((result) => result !== undefined)
+            .map((result) => result!.secure_url);
+    }
+
+    if (!payload.categoryId) {
+
+        throw new ApiError("Category ID is required", httpStatus.NOT_FOUND,);
+    }
+
+    await prisma.categoryAttribute.findMany({
+        where: { categoryId: payload.categoryId }
+    });
+
+    const attributes = payload.attributes || {};
+
+    const productActualPrice = Number(payload.productActualPrice) || 0;
+    const discountedRate = Number(payload.discountedRate) || 0;
+
+    const { sellingPrice, discountAmount } = calculateDiscount(productActualPrice, discountedRate);
+
+    const product: Products = await prisma.products.create({
+        data: {
+            title: payload.title,
+            description: payload.description,
+            brand: payload.brand,
+            status: payload.status || "AVAILABLE",
+            images: product_images,
+            productActualPrice,
+            discountedRate,
+            stock: Number(payload.stock) || 0,
+            specifications: attributes,
+            category: { connect: { id: payload.categoryId } },
+            seller: { connect: { id: payload.sellerId } },
+            user: { connect: { id: payload.userId } },
+        },
+    });
+
+    return {
+        ...product,
+        sellingPrice,
+        discountAmount,
+    };
+};
 const getSingleProducts = async (productId: string) => {
     const product = await prisma.products.findUnique({
         where: { id: productId },
@@ -189,36 +258,58 @@ const getSingleProducts = async (productId: string) => {
         }]
     };
 };
-
 const updateProducts = async (req: Request, productsId: string): Promise<Products> => {
+    const payload = typeof req.body.data === "string" ? JSON.parse(req.body.data) : req.body;
 
-    const body = req.body || {};
+    // ১. আগের ইমেজগুলো ডাটাবেজ থেকে নিয়ে আসা (নতুন গুলোর সাথে যোগ করার জন্য)
+    const currentProduct = await prisma.products.findUnique({
+        where: { id: productsId },
+        select: { images: true }
+    });
 
-
-    let payload = body.data ? JSON.parse(body.data) : body;
-
-
-    if (req.file) {
-        const uploadProductImage = await fileUploader.uploadToCloudinary(req.file);
-        if (uploadProductImage?.secure_url) {
-            payload.images = [uploadProductImage.secure_url];
-        }
+    if (!currentProduct) {
+        throw new ApiError("Product not found", httpStatus.NOT_FOUND);
     }
 
-    if (payload.price) payload.price = parseFloat(payload.price.toString());
-    if (payload.stock) payload.stock = parseInt(payload.stock.toString());
-    if (payload.productActualPrice) payload.productActualPrice = Number(payload.productActualPrice);
-    if (payload.discountedRate) payload.discountedRate = Number(payload.discountedRate);
+    // ২. নতুন ইমেজ হ্যান্ডেলিং
+    let new_images: string[] = [];
+    const files = req.files as Express.Multer.File[];
 
+    if (files && files.length > 0) {
+        const uploadPromises = files.map((file) => fileUploader.uploadToCloudinary(file));
+        const uploadResults = await Promise.all(uploadPromises);
 
+        new_images = uploadResults
+            .filter((result) => result !== undefined)
+            .map((result) => result!.secure_url);
+    }
+
+    // ৩. আগের ইমেজ + নতুন ইমেজ (Merge)
+    const finalImages = [...(currentProduct.images as string[]), ...new_images];
+
+    // ৪. আপনার create function এর স্টাইলে ম্যাপিং এবং আপডেট
     const updatedProducts = await prisma.products.update({
         where: { id: productsId },
-        data: payload,
+        data: {
+            title: payload.title, // যদি payload এ থাকে তবে আপডেট হবে, না থাকলে আগেরটা থাকবে
+            description: payload.description,
+            brand: payload.brand,
+            status: payload.status,
+            images: finalImages,
+            productActualPrice: payload.productActualPrice ? Number(payload.productActualPrice) : undefined,
+            discountedRate: payload.discountedRate ? Number(payload.discountedRate) : undefined,
+            stock: payload.stock !== undefined ? Number(payload.stock) : undefined,
+            specifications: payload.attributes || payload.specifications,
+
+            // রিলেশনাল ফিল্ড আপডেট (আপনার create এর মতোই connect ব্যবহার করে)
+            ...(payload.categoryId && { category: { connect: { id: payload.categoryId } } }),
+            ...(payload.sellerId && { seller: { connect: { id: payload.sellerId } } }),
+            ...(payload.userId && { user: { connect: { id: payload.userId } } }),
+        },
     });
 
     return updatedProducts;
-}
-
+};
 const deleteProducts = async (productId: string) => {
     const deletedProduct = await prisma.products.update({
         where: { id: productId, status: ProductStatus.AVAILABLE },

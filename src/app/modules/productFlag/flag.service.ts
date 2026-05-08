@@ -28,8 +28,10 @@ const getFlashSales = async (): Promise<{ data: ProductPrice[] }> => {
     };
 };
 
-const getBestSelling = async (): Promise<{ data: ProductPrice[] }> => {
+const getBestSelling = async (): Promise<{ data: any[] }> => {
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    // ১. প্রথমে সেল হওয়া প্রোডাক্টগুলো খোঁজা
     const topSellingItems = await prisma.orderItem.groupBy({
         by: ['productId'],
         _sum: { quantity: true },
@@ -45,17 +47,48 @@ const getBestSelling = async (): Promise<{ data: ProductPrice[] }> => {
         take: 10,
     });
 
-    const productIds = topSellingItems.map((item) => item.productId);
-    const bestSale = await prisma.products.findMany({
-        where: { id: { in: productIds } },
-        include: {
-            review: true,
-        },
+    let products;
+
+    // ২. যদি সেল থাকে তবে সেই অনুযায়ী প্রোডাক্ট আনা
+    if (topSellingItems.length > 0) {
+        const productIds = topSellingItems.map((item) => item.productId);
+        products = await prisma.products.findMany({
+            where: { id: { in: productIds } },
+            include: {
+                review: true,
+                category: true,
+                seller: { select: { shopName: true } }
+            },
+        });
+    }
+    // ৩. যদি সেল না থাকে, তবে রিসেন্ট ১০টি প্রোডাক্ট আনা (নতুন লজিক)
+    else {
+        products = await prisma.products.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+            include: {
+                review: true,
+                category: true,
+                seller: { select: { shopName: true } }
+            },
+        });
+    }
+
+    // ৪. ফাইনাল ক্যালকুলেশন
+    const data = products.map((product: any) => {
+        const { discountAmount, sellingPrice } = (calculateDiscount as any)(
+            product.productActualPrice,
+            product.discountedRate
+        );
+
+        return {
+            ...product,
+            sellingPrice,
+            discountAmount
+        };
     });
 
-    return {
-        data: bestSale.map(productPriceCalculation),
-    };
+    return { data };
 };
 
 const getFeaturedproducts = async (): Promise<{ data: ProductPrice[] }> => {

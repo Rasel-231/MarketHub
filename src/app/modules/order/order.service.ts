@@ -181,34 +181,34 @@ const cancelOrder = async (userId: string, orderId: string): Promise<void> => {
 const updateOrderStatus = async (orderId: string, userId: string, payload: any) => {
     const { status, details, riderName, riderPhone } = payload;
 
-    if (!userId) {
-        throw new ApiError("User ID is required", httpStatus.UNAUTHORIZED);
-    }
+
+    if (!userId) { throw new ApiError("User ID is required", httpStatus.UNAUTHORIZED) }
 
 
     const result = await prisma.$transaction(async (tx) => {
-        const isOrderExist = await tx.order.findUnique({
-            where: { id: orderId }
-        });
+        const isOrderExist = await tx.order.findUnique({ where: { id: orderId }, include: { payment: true } });
+        if (!isOrderExist) { throw new ApiError("Order not found", httpStatus.NOT_FOUND) }
 
-        if (!isOrderExist) {
-            throw new ApiError("Order not found", httpStatus.NOT_FOUND);
-        }
-
-        // অর্ডার আপডেট করা
+        const shouldMarkAsPaid = status === OrderStatus.DELIVERED && isOrderExist.payment?.paymentStatus === PaymentStatus.UNPAID;
         const updatedOrder = await tx.order.update({
             where: { id: orderId },
             data: {
-                status,
-
+                status: status as OrderStatus,
                 ...(riderName && { riderName }),
                 ...(riderPhone && { riderPhone }),
+                ...(shouldMarkAsPaid && {
+                    payment: {
+                        update: {
+                            paymentStatus: PaymentStatus.PAID
+                        }
+                    }
+                })
             },
             include: {
-                orderTimeline: true
+                orderTimeline: true,
+                payment: true
             },
         });
-
 
         await tx.orderTimeline.create({
             data: {

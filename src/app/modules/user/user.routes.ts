@@ -8,13 +8,14 @@ import { parseData } from "../../middlewares/parseData";
 import validateRequest from "../../middlewares/validateRequest";
 
 const router = express.Router();
+
 router.get("/", auth(UserRole.ADMIN), userController.getAllUsers);
-router.post("/create-user", fileUploader.upload.single("profile_images"), parseData, validateRequest(UserValidation.createUserValidationSchema), userController.createUser);
+
+router.post("/create-user", fileUploader.upload, parseData, validateRequest(UserValidation.createUserValidationSchema), userController.createUser);
 
 router.get("/profile", auth(UserRole.ADMIN, UserRole.BUYER, UserRole.SELLER), userController.getMyProfile);
 router.get("/:id", auth(UserRole.ADMIN), userController.getSingleUser);
-router.patch("/:id", auth(UserRole.ADMIN, UserRole.SELLER), fileUploader.upload.single("profile_images"), parseData, userController.updateUser);
+router.patch("/:id", auth(UserRole.ADMIN, UserRole.SELLER), fileUploader.upload, parseData, userController.updateUser);
 router.delete("/:id", auth(UserRole.ADMIN), userController.deleteUser);
-
 
 export const userRoutes = router;

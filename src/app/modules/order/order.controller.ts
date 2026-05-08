@@ -6,8 +6,6 @@ import { orderService } from "./order.service";
 
 const checkout = catchAsync(async (req: Request, res: Response) => {
     const user = (req as any).user;
-
-    // মনে রাখবেন: req.body তে অবশ্যই deliveryAddress এবং paymentMethod থাকতে হবে
     const result = await orderService.checkout(user.userId, req.body);
 
     sendResponse(res, {
@@ -16,7 +14,7 @@ const checkout = catchAsync(async (req: Request, res: Response) => {
         message: result.paymentUrl
             ? "Payment initiated. Redirecting..."
             : "Order placed successfully with Cash on Delivery!",
-        data: result // এখানে এখন paymentUrl এবং transactionId দুইটাই আছে
+        data: result
     });
 });
 

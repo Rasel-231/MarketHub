@@ -7,6 +7,7 @@ model Products {
   images             String[]
   stock              Int
   brand              String
+  shopName           String?
   status             ProductStatus @default(AVAILABLE)
   isFeatured         Boolean       @default(false)
   flashSalePrice     Decimal?
@@ -41,4 +42,13 @@ model Wishlist {
   updatedAt     DateTime @updatedAt
 
   @@map("wishlist")
+}
+
+model BannerImages {
+  id        String   @id @default(uuid())
+  images    String[] 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("banner_images")
 }

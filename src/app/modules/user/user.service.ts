@@ -11,9 +11,10 @@ import { uploadImage } from "../../utils/imageUpload";
 
 const createUser = async (payload: Request) => {
     let profilePhoto = null;
+    const files = payload.files as Express.Multer.File[];
 
-    if (payload.file) {
-        const uploadedResult = await fileUploader.uploadToCloudinary(payload.file);
+    if (files && files.length > 0) {
+        const uploadedResult = await fileUploader.uploadToCloudinary(files[0]);
         profilePhoto = uploadedResult?.secure_url;
     }
 
@@ -63,7 +64,6 @@ const createUser = async (payload: Request) => {
         return fullUserData;
     });
 };
-
 const getAllUsers = async (params: IUserFilters, options: IPaginationOptions) => {
     const { searchTerm, ...filtersData } = params;
     const andConditions: Prisma.UserWhereInput[] = [];
