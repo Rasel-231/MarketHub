@@ -43,7 +43,6 @@ const getSingleOrder = catchAsync(async (req: Request, res: Response) => {
 });
 const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
     const user = (req as any).user;
-    console.log("Logged in user data:", user);
     const { id } = req.params;
     const payload = req.body;
     const result = await orderService.updateOrderStatus(id as string, user.userId, payload);
@@ -71,5 +70,5 @@ export const orderController = {
     getMyOrders,
     getSingleOrder,
     cancelOrder,
-    updateOrderStatus
+    updateOrderStatus,
 };

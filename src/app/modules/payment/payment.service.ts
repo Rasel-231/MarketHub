@@ -43,7 +43,7 @@ const validatePaymentService = async (payload: any) => {
     const validationResult = await sslcz.validate(payload);
 
     if (validationResult.status === 'VALID') {
-        return await prisma.$transaction(async (tx) => {
+        const updatedPayment = await prisma.$transaction(async (tx) => {
             const updatedPayment = await tx.payment.update({
                 where: { transactionId: validationResult.tran_id },
                 data: { paymentStatus: PaymentStatus.PAID }
@@ -54,8 +54,10 @@ const validatePaymentService = async (payload: any) => {
                 data: { status: OrderStatus.DELIVERED }
             });
 
-            return { isValid: true };
+            return updatedPayment;
         });
+
+        return { isValid: true };
     }
     return { isValid: false };
 };

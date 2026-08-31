@@ -16,7 +16,6 @@ enum ProductStatus {
   DISCONTINUED
 }
 
-
 enum OrderStatus {
   PENDING
   ORDER_RECEIVED
@@ -29,6 +28,7 @@ enum OrderStatus {
   OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
+  REFUNDED
 }
 
 enum PaymentStatus {
@@ -54,4 +54,3 @@ enum CategoryStatus {
   ACTIVE
   INACTIVE
 }
-

@@ -1,17 +1,21 @@
 model Order {
-  id              String      @id @default(uuid())
-  totalAmount     Float
-  status          OrderStatus @default(PENDING)
-  deliveryAddress String
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  userId          String
-  riderName       String?
-  riderPhone      String?
-  orderItems      OrderItem[]
-  orderTimeline   OrderTimeline[]
-  user            User        @relation(fields: [userId], references: [id])
-  payment         Payment?
+  id                 String          @id @default(uuid())
+  totalAmount        Float
+  status             OrderStatus     @default(PENDING)
+  deliveryAddress    String
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  userId                    String
+  invoiceUrl                String?
+  invoiceGeneratedFor       String?
+  invoiceGenerationCount    Int      @default(0)
+  invoiceGenerationInProgress Boolean @default(false)
+  riderName                 String?
+  riderPhone                String?
+  orderItems         OrderItem[]
+  orderTimeline      OrderTimeline[]
+  user               User            @relation(fields: [userId], references: [id])
+  payment            Payment?
 
   @@map("orders")
 }
@@ -39,4 +43,12 @@ model OrderTimeline {
   order     Order       @relation(fields: [orderId], references: [id])
 
   @@map("order_timelines")
+}
+
+model InvoiceCounter {
+  id      Int    @id @default(autoincrement())
+  date    String @unique
+  counter Int    @default(0)
+
+  @@map("invoice_counters")
 }

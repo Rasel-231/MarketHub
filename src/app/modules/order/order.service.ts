@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentMethod, PaymentStatus } from "@prisma/client";
+import { OrderStatus, PaymentMethod, PaymentStatus, UserRole } from "@prisma/client";
 import ApiError from "../../shared/ApiError";
 import { prisma } from "../../shared/prisma";
 import httpStatus from "http-status";
@@ -85,7 +85,6 @@ const checkout = async (userId: string, payload: { deliveryAddress: string, paym
             orderId: createOrder.id
         };
     });
-
 
     if (result.paymentMethod === PaymentMethod.ONLINE) {
         const paymentUrl = await paymentService.initiatePaymentService(result);
@@ -244,5 +243,5 @@ export const orderService = {
     getMyOrders,
     getSingleOrder,
     cancelOrder,
-    updateOrderStatus
+    updateOrderStatus,
 };

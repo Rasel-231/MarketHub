@@ -7,12 +7,10 @@ model Payment {
   paymentStatus PaymentStatus
   paymentMethod PaymentMethod
   createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   billing       Billing?
   order         Order         @relation(fields: [orderId], references: [id])
   user          User          @relation(fields: [userId], references: [id])
 
   @@map("payments")
 }
-
-
-
